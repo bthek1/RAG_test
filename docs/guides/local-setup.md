@@ -37,9 +37,9 @@ docker compose up
 ```
 
 This starts:
-- `db` — PostgreSQL 16 on port `5432`
-- `backend` — Django dev server on `http://localhost:8000`
-- `frontend` — Vite dev server on `http://localhost:5173`
+- `db` — PostgreSQL 16 on port `5434` (mapped from container `5432`)
+- `backend` — Django dev server on `http://localhost:8004`
+- `frontend` — Vite dev server on `http://localhost:5174`
 
 ### 4. Run database migrations (first time only)
 
@@ -57,9 +57,9 @@ docker compose exec backend python manage.py createsuperuser
 
 ### 6. Verify
 
-- Frontend: [http://localhost:5173](http://localhost:5173)
-- Backend API: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
-- Django admin: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+- Frontend: [http://localhost:5174](http://localhost:5174)
+- Backend API: [http://localhost:8004/api/health/](http://localhost:8004/api/health/)
+- Django admin: [http://localhost:8004/admin/](http://localhost:8004/admin/)
 
 ---
 
@@ -86,7 +86,7 @@ uv run python manage.py migrate
 uv run python manage.py runserver
 ```
 
-Backend is available at `http://localhost:8000`.
+Backend is available at `http://localhost:8000` (or configure `DATABASE_URL` in `.env` for a running instance).
 
 ---
 
@@ -97,7 +97,7 @@ Backend is available at `http://localhost:8000`.
 ```bash
 cd frontend
 cp .env.example .env
-# VITE_API_BASE_URL defaults to http://localhost:8000
+# VITE_API_BASE_URL defaults to http://localhost:8004 (or set to your backend URL)
 ```
 
 ### 2. Install dependencies and start
@@ -107,7 +107,7 @@ npm install
 npm run dev
 ```
 
-Frontend is available at `http://localhost:5173`.
+Frontend is available at `http://localhost:5173` (or the URL printed by Vite).
 
 ---
 
