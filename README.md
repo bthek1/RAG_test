@@ -37,11 +37,14 @@ docker compose exec backend python manage.py migrate
 
 | Doc | Description |
 |-----|-------------|
-| [docs/guides/local-setup.md](docs/guides/local-setup.md) | Full local dev setup (Docker + without Docker) |
-| [docs/guides/onboarding.md](docs/guides/onboarding.md) | New developer orientation |
-| [docs/standards/api-contracts.md](docs/standards/api-contracts.md) | All API endpoints, request/response shapes |
-| [docs/explanations/architecture.md](docs/explanations/architecture.md) | Monorepo structure and design decisions |
-| [docs/explanations/auth-flow.md](docs/explanations/auth-flow.md) | JWT auth flow end to end |
+| [📖 Docs Index](docs/README.md) | Navigation guide for all documentation |
+| [🚀 Local Setup](docs/guides/local-setup.md) | Dev environment setup (Docker or local) |
+| [👋 Onboarding](docs/guides/onboarding.md) | New developer orientation |
+| [🏗️ Architecture](docs/explanations/architecture.md) | System design, structure, data flow |
+| [📊 Project Specs](docs/standards/project-specs.md) | All tech versions, standards, configs |
+| [🔌 API Contracts](docs/standards/api-contracts.md) | All endpoints, request/response shapes |
+| [🔐 Auth Flow](docs/explanations/auth-flow.md) | JWT authentication end-to-end |
+| [📝 Conventions](AGENTS.md) | Coding standards for backend & frontend |
 
 ---
 
