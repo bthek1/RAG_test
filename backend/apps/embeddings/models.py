@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from pgvector.django import IvfflatIndex, VectorField
+from pgvector.django import HnswIndex, VectorField
 
 
 class Document(models.Model):
@@ -23,13 +23,19 @@ class Chunk(models.Model):
     )
     content = models.TextField()
     chunk_index = models.PositiveIntegerField()  # position within the document
-    embedding = VectorField(dimensions=1536)  # OpenAI text-embedding-ada-002 default
+    embedding = VectorField(dimensions=1024)  # BAAI/bge-large-en-v1.5 (1024-dim)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["document", "chunk_index"]
         indexes = [
-            IvfflatIndex(fields=["embedding"], name="chunk_embedding_ivfflat_idx"),
+            HnswIndex(
+                fields=["embedding"],
+                name="chunk_embedding_hnsw_idx",
+                m=16,
+                ef_construction=64,
+                opclasses=["vector_cosine_ops"],
+            ),
         ]
 
     def __str__(self) -> str:

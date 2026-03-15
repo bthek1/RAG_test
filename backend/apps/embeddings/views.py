@@ -11,6 +11,8 @@ from .serializers import (
     ChunkSerializer,
     DocumentListSerializer,
     DocumentSerializer,
+    RAGRequestSerializer,
+    RAGResponseSerializer,
     SimilaritySearchSerializer,
 )
 
@@ -40,7 +42,7 @@ class DocumentListCreateView(generics.ListCreateAPIView):
             source=serializer.validated_data.get("source", ""),
         )
 
-    def create(self, request: Request, *args, **kwargs) -> Response:
+    def create(self, request: Request, *_args, **_kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -83,3 +85,35 @@ class SimilaritySearchView(APIView):
             top_k=serializer.validated_data["top_k"],
         )
         return Response(ChunkSerializer(chunks, many=True).data)
+
+
+class RAGView(APIView):
+    """POST /api/embeddings/rag/
+
+    Retrieve top-k chunks then generate a Claude answer.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        serializer = RAGRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        query = serializer.validated_data["query"]
+        top_k = serializer.validated_data["top_k"]
+
+        chunks = list(services.search_similar_chunks(query=query, top_k=top_k))
+        answer = services.generate_answer(query=query, context_chunks=chunks)
+
+        sources = [
+            {
+                "chunk_id": chunk.id,
+                "document_title": chunk.document.title,
+                "content": chunk.content,
+                "distance": getattr(chunk, "distance", None),
+            }
+            for chunk in chunks
+        ]
+
+        out = RAGResponseSerializer({"answer": answer, "sources": sources})
+        return Response(out.data)

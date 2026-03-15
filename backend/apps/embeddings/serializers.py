@@ -43,3 +43,20 @@ class DocumentListSerializer(serializers.ModelSerializer):
 class SimilaritySearchSerializer(serializers.Serializer):
     query = serializers.CharField(min_length=1)
     top_k = serializers.IntegerField(min_value=1, max_value=50, default=5)
+
+
+class RAGSourceSerializer(serializers.Serializer):
+    chunk_id = serializers.UUIDField()
+    document_title = serializers.CharField()
+    content = serializers.CharField()
+    distance = serializers.FloatField()
+
+
+class RAGRequestSerializer(serializers.Serializer):
+    query = serializers.CharField(min_length=1)
+    top_k = serializers.IntegerField(min_value=1, max_value=50, default=5)
+
+
+class RAGResponseSerializer(serializers.Serializer):
+    answer = serializers.CharField()
+    sources = RAGSourceSerializer(many=True)

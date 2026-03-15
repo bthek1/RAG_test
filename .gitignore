@@ -6,6 +6,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Packaging / setuptools
+*.egg-info/
+*.egg
+
 # Django #
 *.log
 db.sqlite3

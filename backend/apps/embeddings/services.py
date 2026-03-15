@@ -1,17 +1,19 @@
-"""Business logic for document ingestion and similarity search.
+"""Business logic for document ingestion, similarity search, and RAG generation.
 
-The embedding backend is abstracted so it can be swapped out (e.g. for a
-stub in tests or a local model in development).
+Embedding backend: sentence-transformers (free, local, no API key required).
+Generation backend: Anthropic Claude (ANTHROPIC_API_KEY required for RAG).
 """
 
 from __future__ import annotations
 
 import os
+import re
 
+import anthropic
+from django.core.exceptions import ImproperlyConfigured
 from pgvector.django import CosineDistance
 
 from .models import Chunk, Document
-
 
 # ---------------------------------------------------------------------------
 # Chunking
@@ -26,9 +28,6 @@ def chunk_document(content: str, chunk_size: int = 512, overlap: int = 64) -> li
     """
     if not content:
         return []
-
-    # Split into sentences (naive: split on ". ", "! ", "? ")
-    import re
 
     sentences = re.split(r"(?<=[.!?])\s+", content.strip())
 
@@ -54,35 +53,38 @@ def chunk_document(content: str, chunk_size: int = 512, overlap: int = 64) -> li
 
 
 # ---------------------------------------------------------------------------
-# Embedding backend
+# Embedding backend — sentence-transformers (local, free, no API key)
 # ---------------------------------------------------------------------------
 
-EMBEDDING_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "1536"))
+EMBEDDING_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "1024"))
+_EMBEDDING_MODEL_NAME = os.environ.get("EMBEDDING_MODEL", "BAAI/bge-large-en-v1.5")
+_model_singleton = None
+
+
+def get_embedding_model():
+    """Lazy-load and cache the SentenceTransformer model as a module singleton."""
+    global _model_singleton  # noqa: PLW0603
+    if _model_singleton is None:
+        from sentence_transformers import SentenceTransformer
+
+        _model_singleton = SentenceTransformer(_EMBEDDING_MODEL_NAME)
+    return _model_singleton
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Return a list of embedding vectors for *texts*.
+    """Return a list of embedding vectors for *texts* using a local model.
 
-    Uses the OpenAI embeddings API by default.  Set ``OPENAI_API_KEY`` in the
-    environment to enable real embeddings.
+    The model is loaded once and kept in memory (singleton).  No API key or
+    network call is made after the initial model download.
 
-    If the key is absent (e.g. in tests / local dev without a key) a zero
-    vector of the correct dimension is returned so the rest of the pipeline
-    still works.
+    In tests, monkeypatch this function to return zero vectors of the correct
+    dimension — no HTTP mock is needed since the model runs locally.
     """
-    api_key = os.environ.get("OPENAI_API_KEY", "")
-    if not api_key:
-        # Stub: return zero vectors (useful for testing without an API key)
-        return [[0.0] * EMBEDDING_DIMENSIONS for _ in texts]
-
-    from openai import OpenAI
-
-    client = OpenAI(api_key=api_key)
-    response = client.embeddings.create(
-        model=os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
-        input=texts,
-    )
-    return [item.embedding for item in response.data]
+    if not texts:
+        return []
+    model = get_embedding_model()
+    vectors = model.encode(texts, convert_to_numpy=True)
+    return [v.tolist() for v in vectors]
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +113,7 @@ def ingest_document(title: str, content: str, source: str = "") -> Document:
                 chunk_index=idx,
                 embedding=vector,
             )
-            for idx, (text, vector) in enumerate(zip(text_chunks, vectors))
+            for idx, (text, vector) in enumerate(zip(text_chunks, vectors, strict=True))
         ]
     )
 
@@ -134,3 +136,38 @@ def search_similar_chunks(query: str, top_k: int = 5):  # type: ignore[return]
         .annotate(distance=CosineDistance("embedding", query_vector))
         .order_by("distance")[:top_k]
     )
+
+
+# ---------------------------------------------------------------------------
+# Generation — Claude via Anthropic API
+# ---------------------------------------------------------------------------
+
+_CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-4-5")
+
+
+def generate_answer(query: str, context_chunks: list[Chunk]) -> str:
+    """Generate a grounded answer using Claude with retrieved chunks as context.
+
+    Requires ``ANTHROPIC_API_KEY`` to be set in the environment.
+    Raises ``ImproperlyConfigured`` if the key is absent.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise ImproperlyConfigured(
+            "ANTHROPIC_API_KEY is not set. "
+            "Set it in your environment or .env file to use the RAG endpoint."
+        )
+
+    client = anthropic.Anthropic(api_key=api_key)
+    context = "\n\n".join(chunk.content for chunk in context_chunks)
+    message = client.messages.create(
+        model=_CLAUDE_MODEL,
+        max_tokens=1024,
+        messages=[
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion: {query}",
+            }
+        ],
+    )
+    return message.content[0].text

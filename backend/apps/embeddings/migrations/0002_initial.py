@@ -7,6 +7,24 @@ import uuid
 from django.db import migrations, models
 
 
+def _add_ivfflat_index(apps, schema_editor):
+    """Create IvfflatIndex — no-op on non-PostgreSQL backends."""
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    Chunk = apps.get_model("embeddings", "Chunk")
+    index = pgvector.django.indexes.IvfflatIndex(
+        fields=["embedding"],
+        name="chunk_embedding_ivfflat_idx",
+    )
+    schema_editor.add_index(Chunk, index)
+
+
+def _remove_ivfflat_index(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    schema_editor.execute('DROP INDEX IF EXISTS "chunk_embedding_ivfflat_idx"')
+
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -39,7 +57,23 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['document', 'chunk_index'],
-                'indexes': [pgvector.django.indexes.IvfflatIndex(fields=['embedding'], name='chunk_embedding_ivfflat_idx')],
             },
+        ),
+        # IvfflatIndex is PostgreSQL-specific; use SeparateDatabaseAndState so
+        # the migration state tracks it (required for 0003's RemoveIndex) while
+        # the actual database operation is skipped on SQLite.
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AddIndex(
+                    model_name="chunk",
+                    index=pgvector.django.indexes.IvfflatIndex(
+                        fields=["embedding"],
+                        name="chunk_embedding_ivfflat_idx",
+                    ),
+                ),
+            ],
+            database_operations=[
+                migrations.RunPython(_add_ivfflat_index, _remove_ivfflat_index),
+            ],
         ),
     ]
