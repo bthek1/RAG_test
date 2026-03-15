@@ -2,9 +2,7 @@
 name = "django-react-template"
 version = "0.1.0"
 description = "Django REST Framework + React template"
-authors = [
-  { name = "Benedict Thekkel", email = "bthekkel1@gmail.com" },
-]
+authors = [{ name = "Benedict Thekkel", email = "bthekkel1@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -15,6 +13,8 @@ dependencies = [
   "django-environ ~=0.11",
   "gunicorn ~=23.0",
   "psycopg[binary] ~=3.2",
+  "pgvector~=0.3",
+  "openai~=1.0",
 ]
 
 [build-system]
@@ -53,13 +53,11 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 testpaths = ["apps"]
 console_output_style = "progress"
-filterwarnings = [
-    "ignore::DeprecationWarning",
-]
+filterwarnings = ["ignore::DeprecationWarning"]
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests requiring external APIs",
-    "development: marks tests that only run with development settings",
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "integration: marks tests as integration tests requiring external APIs",
+  "development: marks tests that only run with development settings",
 ]
 
 
@@ -75,48 +73,48 @@ indent-style = "space"
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "W",    # pycodestyle warnings
-    "UP",   # pyupgrade
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "PT",   # flake8-pytest-style
-    "Q",    # flake8-quotes
-    "C4",   # flake8-comprehensions
-    "C90",  # mccabe (complexity)
-    "DJ",   # flake8-django
-    "N",    # pep8-naming
-    "PLE",  # pylint error
-    "PLW",  # pylint warning
-    "RUF",  # Ruff-specific rules
-    "S",    # flake8-bandit (security)
-    "SIM",  # flake8-simplify
-    "T10",  # flake8-debugger
-    "T20",  # flake8-print
-    "TID",  # flake8-tidy-imports
-    "ERA",  # eradicate (commented out code)
-    "PIE",  # flake8-pie
-    "ISC",  # flake8-implicit-str-concat
-    "RET",  # flake8-return
-    "ARG",  # flake8-unused-arguments
-    # "A",    # flake8-builtins - may conflict with Django
-    # "ANN",  # flake8-annotations - enable when ready for full type hints
-    # "DTZ",  # flake8-datetimez - Django handles timezone well
-    # "D",    # pydocstyle - enable when ready for full docstrings
-    # "EM",   # flake8-errmsg
-    # "G",    # flake8-logging-format
-    # "PLR",  # pylint refactor - can be noisy
-    # "TRY",  # tryceratops
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "W",   # pycodestyle warnings
+  "UP",  # pyupgrade
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "PT",  # flake8-pytest-style
+  "Q",   # flake8-quotes
+  "C4",  # flake8-comprehensions
+  "C90", # mccabe (complexity)
+  "DJ",  # flake8-django
+  "N",   # pep8-naming
+  "PLE", # pylint error
+  "PLW", # pylint warning
+  "RUF", # Ruff-specific rules
+  "S",   # flake8-bandit (security)
+  "SIM", # flake8-simplify
+  "T10", # flake8-debugger
+  "T20", # flake8-print
+  "TID", # flake8-tidy-imports
+  "ERA", # eradicate (commented out code)
+  "PIE", # flake8-pie
+  "ISC", # flake8-implicit-str-concat
+  "RET", # flake8-return
+  "ARG", # flake8-unused-arguments
+  # "A",    # flake8-builtins - may conflict with Django
+  # "ANN",  # flake8-annotations - enable when ready for full type hints
+  # "DTZ",  # flake8-datetimez - Django handles timezone well
+  # "D",    # pydocstyle - enable when ready for full docstrings
+  # "EM",   # flake8-errmsg
+  # "G",    # flake8-logging-format
+  # "PLR",  # pylint refactor - can be noisy
+  # "TRY",  # tryceratops
 ]
 
 ignore = [
-    "S101",    # Use of assert detected (pytest uses assert)
-    "S105",    # Possible hardcoded password
-    "S106",    # Possible hardcoded password
-    "DJ001",   # Avoid using null=True on string-based fields
-    "RUF012",  # Mutable class attributes
-    "N818",    # Exception name should be named with an Error suffix
+  "S101",   # Use of assert detected (pytest uses assert)
+  "S105",   # Possible hardcoded password
+  "S106",   # Possible hardcoded password
+  "DJ001",  # Avoid using null=True on string-based fields
+  "RUF012", # Mutable class attributes
+  "N818",   # Exception name should be named with an Error suffix
 ]
 
 [tool.ruff.lint.mccabe]

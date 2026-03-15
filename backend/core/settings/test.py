@@ -10,6 +10,13 @@ DATABASES = {
     }
 }
 
+# Integration tests (marked with @pytest.mark.integration) target a real
+# Postgres + pgvector instance.  Set INTEGRATION_DATABASE_URL to override.
+INTEGRATION_DATABASE_URL = env(
+    "INTEGRATION_DATABASE_URL",
+    default="postgres://appuser:apppassword@localhost:5434/appdb",
+)
+
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 DEFAULT_FROM_EMAIL = "root@localhost"
 
