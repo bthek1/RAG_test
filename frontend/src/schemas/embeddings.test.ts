@@ -56,39 +56,92 @@ describe('ingestTextSchema (mode: "text")', () => {
 });
 
 describe('ingestFileSchema (mode: "file")', () => {
-  it("accepts a valid File object", () => {
+  it("accepts a single File in an array", () => {
     const file = new File(["data"], "report.pdf", { type: "application/pdf" });
     const result = ingestFileSchema.safeParse({
       mode: "file",
       title: "PDF Doc",
-      file,
+      file: [file],
     });
     expect(result.success).toBe(true);
   });
 
-  it("rejects missing file", () => {
+  it("accepts multiple Files in the array", () => {
+    const files = [
+      new File(["a"], "a.pdf"),
+      new File(["b"], "b.docx"),
+      new File(["c"], "c.csv"),
+    ];
     const result = ingestFileSchema.safeParse({
       mode: "file",
-      title: "PDF Doc",
+      title: "Batch",
+      file: files,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it("rejects non-File value for file field", () => {
+  it("accepts omitted title (title is optional in file mode)", () => {
+    const file = new File(["data"], "report.pdf");
     const result = ingestFileSchema.safeParse({
       mode: "file",
-      title: "PDF Doc",
-      file: "not-a-file",
+      file: [file],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it("rejects empty title", () => {
+  it("accepts empty string title (treated as absent)", () => {
     const file = new File(["data"], "report.pdf");
     const result = ingestFileSchema.safeParse({
       mode: "file",
       title: "",
+      file: [file],
+    });
+    // empty string passes max(512) with no min constraint in file mode
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects title over 512 chars", () => {
+    const file = new File(["data"], "report.pdf");
+    const result = ingestFileSchema.safeParse({
+      mode: "file",
+      title: "a".repeat(513),
+      file: [file],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an empty file array", () => {
+    const result = ingestFileSchema.safeParse({
+      mode: "file",
+      title: "Doc",
+      file: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects missing file field", () => {
+    const result = ingestFileSchema.safeParse({
+      mode: "file",
+      title: "PDF Doc",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a bare File (not wrapped in array)", () => {
+    const file = new File(["data"], "report.pdf");
+    const result = ingestFileSchema.safeParse({
+      mode: "file",
+      title: "PDF Doc",
       file,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an array containing a non-File value", () => {
+    const result = ingestFileSchema.safeParse({
+      mode: "file",
+      title: "PDF Doc",
+      file: ["not-a-file"],
     });
     expect(result.success).toBe(false);
   });
@@ -104,12 +157,12 @@ describe("ingestDocumentSchema (discriminated union)", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts file mode with a File", () => {
+  it("accepts file mode with a File array", () => {
     const file = new File(["data"], "doc.pdf", { type: "application/pdf" });
     const result = ingestDocumentSchema.safeParse({
       mode: "file",
       title: "PDF",
-      file,
+      file: [file],
     });
     expect(result.success).toBe(true);
   });

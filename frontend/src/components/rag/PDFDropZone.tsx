@@ -1,19 +1,25 @@
 import { useRef, useState } from "react";
-import { Paperclip, X } from "lucide-react";
+import { FileText, Paperclip, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PDFDropZoneProps {
-  value: File | null;
-  onChange: (file: File | null) => void;
+  value: File[];
+  onChange: (files: File[]) => void;
   error?: string;
 }
 
 const ACCEPTED_EXTENSIONS = [
-  ".pdf", ".txt", ".md",
-  ".html", ".htm",
-  ".docx", ".pptx",
-  ".csv", ".tsv",
-  ".json", ".jsonl",
+  ".pdf",
+  ".txt",
+  ".md",
+  ".html",
+  ".htm",
+  ".docx",
+  ".pptx",
+  ".csv",
+  ".tsv",
+  ".json",
+  ".jsonl",
   ".xlsx",
 ] as const;
 
@@ -48,16 +54,41 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
 
-  function handleFile(file: File) {
-    const ext = "." + file.name.toLowerCase().split(".").pop();
-    if (!ACCEPTED_EXTENSIONS.includes(ext as (typeof ACCEPTED_EXTENSIONS)[number])) {
-      setClientError(
-        `Unsupported file type '${ext}'. Allowed: ${ACCEPTED_EXTENSIONS.join(", ")}`
-      );
-      return;
+  function handleFiles(incoming: FileList | File[]) {
+    const arr = Array.from(incoming);
+    const valid: File[] = [];
+    let badExt: string | null = null;
+
+    for (const file of arr) {
+      const ext = "." + file.name.toLowerCase().split(".").pop();
+      if (
+        !ACCEPTED_EXTENSIONS.includes(
+          ext as (typeof ACCEPTED_EXTENSIONS)[number],
+        )
+      ) {
+        badExt = ext;
+      } else {
+        valid.push(file);
+      }
     }
-    setClientError(null);
-    onChange(file);
+
+    if (badExt) {
+      setClientError(
+        `Unsupported file type '${badExt}'. Allowed: ${ACCEPTED_EXTENSIONS.join(", ")}`,
+      );
+    } else {
+      setClientError(null);
+    }
+
+    if (valid.length > 0) {
+      onChange([...value, ...valid]);
+    }
+  }
+
+  function removeFile(index: number) {
+    const next = value.filter((_, i) => i !== index);
+    onChange(next);
+    if (next.length === 0) setClientError(null);
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -73,20 +104,13 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    handleFiles(e.dataTransfer.files);
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-    // Reset so the same file can be re-selected after clearing
+    if (e.target.files) handleFiles(e.target.files);
+    // Reset so the same file can be re-selected
     e.target.value = "";
-  }
-
-  function handleClear() {
-    setClientError(null);
-    onChange(null);
   }
 
   const displayError = clientError ?? error;
@@ -95,7 +119,7 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
     <div className="space-y-1.5">
       <div
         role="button"
-        aria-label="Upload a document"
+        aria-label="Upload documents"
         tabIndex={0}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
@@ -105,7 +129,7 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors",
+          "flex min-h-25 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center transition-colors",
           isDragging
             ? "border-primary bg-primary/5"
             : "border-border hover:border-primary/50 hover:bg-muted/30",
@@ -115,46 +139,56 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
         <input
           ref={inputRef}
           type="file"
+          multiple
           accept=".pdf,.txt,.md,.html,.htm,.docx,.pptx,.csv,.tsv,.json,.jsonl,.xlsx"
           className="hidden"
           onChange={handleInputChange}
           aria-hidden="true"
         />
 
-        {value ? (
-          <div className="flex items-center gap-2 text-sm">
-            <Paperclip className="h-4 w-4 shrink-0 text-primary" />
-            <span className="max-w-[200px] truncate font-medium">
-              {value.name}
-            </span>
-            <span className="text-muted-foreground">
-              {getFileTypeLabel(value.name)} · {formatBytes(value.size)}
-            </span>
-            <button
-              type="button"
-              aria-label="Remove file"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClear();
-              }}
-              className="rounded p-0.5 hover:bg-muted"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ) : (
-          <>
-            <Paperclip className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Drag &amp; drop a file here, or{" "}
-              <span className="text-primary underline">click to browse</span>
-            </p>
-          </>
-        )}
+        <Paperclip className="h-7 w-7 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          Drag &amp; drop files here, or{" "}
+          <span className="text-primary underline">click to browse</span>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Select one or multiple files at once
+        </p>
       </div>
 
+      {value.length > 0 && (
+        <ul className="space-y-1 rounded-lg border bg-muted/20 p-2">
+          {value.map((file, i) => (
+            <li
+              key={`${file.name}-${i}`}
+              className="flex items-center gap-2 rounded px-2 py-1.5 text-sm bg-background"
+            >
+              <FileText className="h-4 w-4 shrink-0 text-primary" />
+              <span className="min-w-0 flex-1 truncate font-medium">
+                {file.name}
+              </span>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {getFileTypeLabel(file.name)} · {formatBytes(file.size)}
+              </span>
+              <button
+                type="button"
+                aria-label={`Remove ${file.name}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeFile(i);
+                }}
+                className="rounded p-0.5 hover:bg-muted shrink-0"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <p className="text-xs text-muted-foreground">
-        Max 50 MB · PDF, TXT, Markdown, HTML, DOCX, PPTX, CSV, TSV, JSON, JSONL, XLSX
+        Max 50 MB per file · PDF, TXT, Markdown, HTML, DOCX, PPTX, CSV, TSV,
+        JSON, JSONL, XLSX
       </p>
 
       {displayError && (

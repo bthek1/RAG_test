@@ -12,7 +12,11 @@ export const ingestTextSchema = _baseIngestSchema.extend({
 
 export const ingestFileSchema = _baseIngestSchema.extend({
   mode: z.literal("file"),
-  file: z.instanceof(File, { message: "A PDF file is required" }),
+  // title is optional in file mode — defaults to each file's name at submit time
+  title: z.string().max(512).optional(),
+  file: z
+    .array(z.instanceof(File, { message: "Please select a file" }))
+    .min(1, "At least one file is required"),
 });
 
 export const ingestDocumentSchema = z.discriminatedUnion("mode", [
