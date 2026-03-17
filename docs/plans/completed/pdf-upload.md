@@ -1,7 +1,8 @@
 # Plan: PDF Upload Support
 
-**Status:** In Progress  
+**Status:** Complete  
 **Date:** 2026-03-15  
+**Completed:** 2026-03-17  
 **Depends on:** `docs/plans/rag-frontend-visualizer.md` (Part 2 — fully complete)
 
 ---
@@ -60,10 +61,10 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
     return text
 ```
 
-- [ ] Add `pypdf>=4.0` to `backend/pyproject.toml` dependencies
-- [ ] Run `uv sync` (or `just be-install`) to install
-- [ ] Add `extract_text_from_pdf(file_bytes: bytes) -> str` to `services.py`
-- [ ] Add `ValueError` guard for image-only PDFs (returns 400 to caller)
+- [x] Add `pypdf>=4.0` to `backend/pyproject.toml` dependencies
+- [x] Run `uv sync` (or `just be-install`) to install
+- [x] Add `extract_text_from_pdf(file_bytes: bytes) -> str` to `services.py`
+- [x] Add `ValueError` guard for image-only PDFs (returns 400 to caller)
 
 ---
 
@@ -138,11 +139,11 @@ def validate_file(self, value):
 **API contract update** — `docs/standards/api-contracts.md`:  
 Document the new multipart form variant for `POST /api/embeddings/documents/`.
 
-- [ ] Add `DocumentIngestSerializer` to `serializers.py`
-- [ ] Update `DocumentListCreateView` with `parser_classes` and new `perform_create` logic
-- [ ] Add `validate_file` with size (50 MB) and extension checks
-- [ ] Update `docs/standards/api-contracts.md` to document multipart variant
-- [ ] Backend unit tests: valid PDF upload, image-only PDF (400), file too large (400), file + content both present (400), neither present (400)
+- [x] Add `DocumentIngestSerializer` to `serializers.py`
+- [x] Update `DocumentListCreateView` with `parser_classes` and new `perform_create` logic
+- [x] Add `validate_file` with size (50 MB) and extension checks
+- [x] Update `docs/standards/api-contracts.md` to document multipart variant
+- [x] Backend unit tests: valid PDF upload, image-only PDF (400), file too large (400), file + content both present (400), neither present (400)
 
 ---
 
@@ -207,10 +208,10 @@ export const ingestDocumentSchema = z.discriminatedUnion('mode', [
 export type IngestDocumentFormData = z.infer<typeof ingestDocumentSchema>
 ```
 
-- [ ] Update `IngestDocumentRequest` in `frontend/src/types/embeddings.ts`
-- [ ] Update `ingestDocument()` in `frontend/src/api/embeddings.ts` to send `FormData` when `file` is present
-- [ ] Replace `ingestDocumentSchema` in `frontend/src/schemas/embeddings.ts` with discriminated union
-- [ ] Unit tests: `ingestDocumentSchema` validates text mode and file mode, rejects empty content
+- [x] Update `IngestDocumentRequest` in `frontend/src/types/embeddings.ts`
+- [x] Update `ingestDocument()` in `frontend/src/api/embeddings.ts` to send `FormData` when `file` is present
+- [x] Replace `ingestDocumentSchema` in `frontend/src/schemas/embeddings.ts` with discriminated union
+- [x] Unit tests: `ingestDocumentSchema` validates text mode and file mode, rejects empty content
 
 ---
 
@@ -263,9 +264,9 @@ Input mode:
 - Validates `.pdf` extension client-side before setting (shows inline error for wrong type)
 - Accessible: `role="button"`, `aria-label`, keyboard-activatable
 
-- [ ] Create `frontend/src/components/rag/PDFDropZone.tsx`
-- [ ] Update `frontend/src/components/rag/IngestDocumentForm.tsx` to add mode tabs and wire `PDFDropZone`
-- [ ] Add `PDFDropZone.test.tsx` — renders, accepts PDF file, rejects non-PDF, clears on ✕ click
+- [x] Create `frontend/src/components/rag/PDFDropZone.tsx`
+- [x] Update `frontend/src/components/rag/IngestDocumentForm.tsx` to add mode tabs and wire `PDFDropZone`
+- [x] Add `PDFDropZone.test.tsx` — renders, accepts PDF file, rejects non-PDF, clears on ✕ click
 
 ---
 
