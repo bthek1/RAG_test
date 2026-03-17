@@ -313,9 +313,9 @@ class TestPDFUpload:
         response = self._pdf_upload(authenticated_client, fifty_one_mb)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_pdf_upload_wrong_extension(self, authenticated_client):
-        """Non-.pdf filename → 400."""
-        response = self._pdf_upload(authenticated_client, b"data", filename="doc.txt")
+    def test_pdf_upload_unsupported_extension(self, authenticated_client):
+        """Completely unsupported extension (.exe) → 400."""
+        response = self._pdf_upload(authenticated_client, b"data", filename="malware.exe")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_pdf_upload_with_content_also_present(self, authenticated_client):
@@ -354,3 +354,106 @@ class TestPDFUpload:
             )
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["title"] == "Text Doc"
+
+
+# ---------------------------------------------------------------------------
+# Multi-format file upload — one test per supported format
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestMultiFormatUpload:
+    """Verify every supported format reaches ingest_document → 201."""
+
+    URL = "/api/embeddings/documents/"
+
+    def _upload(self, client, filename: str, file_bytes: bytes, content_type: str = "application/octet-stream"):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile(filename, file_bytes, content_type=content_type)
+        with (
+            patch("apps.embeddings.services.extract_text_from_file") as mock_extract,
+            patch("apps.embeddings.services.embed_texts") as mock_embed,
+        ):
+            mock_extract.return_value = "Extracted body text for testing purposes. " * 5
+            mock_embed.return_value = [[0.0] * _DIMS]
+            response = client.post(
+                self.URL,
+                {"title": f"Test {filename}", "file": file_obj},
+                format="multipart",
+            )
+        return response
+
+    def test_txt_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "notes.txt", b"Hello plain text.")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_md_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "readme.md", b"# Heading\nBody.")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_html_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "page.html", b"<p>Hello</p>", "text/html")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_htm_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "page.htm", b"<p>Hello</p>", "text/html")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_docx_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "report.docx", b"fake-docx",
+                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_pptx_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "slides.pptx", b"fake-pptx",
+                                "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_csv_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "data.csv", b"name,age\nAlice,30")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_tsv_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "data.tsv", b"name\tage\nAlice\t30")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_json_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "data.json", b'{"key": "value"}', "application/json")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_jsonl_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "data.jsonl", b'{"a":1}\n{"b":2}')
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_xlsx_upload(self, authenticated_client):
+        response = self._upload(authenticated_client, "sheet.xlsx", b"fake-xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_unsupported_extension_rejected(self, authenticated_client):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile("archive.zip", b"fake", content_type="application/zip")
+        response = authenticated_client.post(
+            self.URL,
+            {"title": "Zip file", "file": file_obj},
+            format="multipart",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_extractor_error_returns_400(self, authenticated_client):
+        """If extract_text_from_file raises, the view returns 400."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile("empty.txt", b"", content_type="text/plain")
+        with patch("apps.embeddings.services.extract_text_from_file") as mock_extract:
+            mock_extract.side_effect = ValueError("File contains no extractable text.")
+            response = authenticated_client.post(
+                self.URL,
+                {"title": "Empty File", "file": file_obj},
+                format="multipart",
+            )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "file" in response.data
