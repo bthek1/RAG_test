@@ -14,9 +14,15 @@ class DocumentIngestSerializer(serializers.Serializer):
     def validate_file(self, value):
         max_mb = 50
         if value.size > max_mb * 1024 * 1024:
-            raise serializers.ValidationError(f"PDF must be under {max_mb} MB.")
-        if not value.name.lower().endswith(".pdf"):
-            raise serializers.ValidationError("Only PDF files are accepted.")
+            raise serializers.ValidationError(f"File must be under {max_mb} MB.")
+        from . import services
+
+        ext = "." + value.name.lower().rsplit(".", 1)[-1]
+        if ext not in services.SUPPORTED_EXTENSIONS:
+            allowed = ", ".join(sorted(services.SUPPORTED_EXTENSIONS))
+            raise serializers.ValidationError(
+                f"Unsupported file type '{ext}'. Allowed: {allowed}"
+            )
         return value
 
     def validate(self, data):
@@ -24,7 +30,7 @@ class DocumentIngestSerializer(serializers.Serializer):
         has_file = bool(data.get("file"))
         if not has_content and not has_file:
             raise serializers.ValidationError(
-                "Provide either 'content' (text) or 'file' (PDF)."
+                "Provide either 'content' (text) or a supported file."
             )
         if has_content and has_file:
             raise serializers.ValidationError("Provide 'content' or 'file', not both.")

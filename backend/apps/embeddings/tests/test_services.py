@@ -210,3 +210,318 @@ class TestExtractTextFromPdf:
         self._mock_reader(monkeypatch, ["", "Real content here.", ""])
         text = extract_text_from_pdf(b"fake")
         assert "Real content here." in text
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_txt
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromTxt:
+    def test_plain_utf8_text(self):
+        from apps.embeddings.services import extract_text_from_txt
+
+        text = extract_text_from_txt(b"Hello, world!")
+        assert text == "Hello, world!"
+
+    def test_strips_yaml_front_matter(self):
+        from apps.embeddings.services import extract_text_from_txt
+
+        content = b"---\ntitle: Test\n---\nBody text here."
+        text = extract_text_from_txt(content)
+        assert text == "Body text here."
+        assert "title: Test" not in text
+
+    def test_markdown_without_front_matter(self):
+        from apps.embeddings.services import extract_text_from_txt
+
+        content = b"# Heading\n\nSome paragraph."
+        text = extract_text_from_txt(content)
+        assert "# Heading" in text
+        assert "Some paragraph." in text
+
+    def test_raises_on_empty_file(self):
+        from apps.embeddings.services import extract_text_from_txt
+
+        with pytest.raises(ValueError, match="no extractable text"):
+            extract_text_from_txt(b"")
+
+    def test_raises_on_whitespace_only(self):
+        from apps.embeddings.services import extract_text_from_txt
+
+        with pytest.raises(ValueError, match="no extractable text"):
+            extract_text_from_txt(b"   \n\n  ")
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_html
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromHtml:
+    def test_strips_tags_returns_visible_text(self):
+        from apps.embeddings.services import extract_text_from_html
+
+        html = b"<html><body><p>Hello <b>world</b>!</p></body></html>"
+        text = extract_text_from_html(html)
+        assert "Hello" in text
+        assert "world" in text
+
+    def test_removes_script_and_style(self):
+        from apps.embeddings.services import extract_text_from_html
+
+        html = b"<html><head><style>body{color:red}</style></head><body><script>alert(1)</script><p>Visible</p></body></html>"
+        text = extract_text_from_html(html)
+        assert "Visible" in text
+        assert "alert" not in text
+        assert "color:red" not in text
+
+    def test_raises_on_no_visible_text(self):
+        from apps.embeddings.services import extract_text_from_html
+
+        html = b"<html><body><script>alert(1)</script></body></html>"
+        with pytest.raises(ValueError, match="No visible text"):
+            extract_text_from_html(html)
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_docx
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromDocx:
+    def _make_docx_bytes(self, paragraphs: list[str]) -> bytes:
+        """Create a minimal in-memory DOCX with the given paragraphs."""
+        import io
+        from docx import Document
+
+        doc = Document()
+        for para in paragraphs:
+            doc.add_paragraph(para)
+        buf = io.BytesIO()
+        doc.save(buf)
+        return buf.getvalue()
+
+    def test_extracts_paragraphs(self):
+        from apps.embeddings.services import extract_text_from_docx
+
+        docx_bytes = self._make_docx_bytes(["First paragraph.", "Second paragraph."])
+        text = extract_text_from_docx(docx_bytes)
+        assert "First paragraph." in text
+        assert "Second paragraph." in text
+
+    def test_raises_on_empty_docx(self):
+        from apps.embeddings.services import extract_text_from_docx
+
+        docx_bytes = self._make_docx_bytes([])
+        with pytest.raises(ValueError, match="No extractable text"):
+            extract_text_from_docx(docx_bytes)
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_pptx
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromPptx:
+    def _make_pptx_bytes(self, slides: list[list[str]]) -> bytes:
+        """Create a minimal in-memory PPTX with given slides (list of text items)."""
+        import io
+        from pptx import Presentation
+        from pptx.util import Inches
+
+        prs = Presentation()
+        blank_layout = prs.slide_layouts[6]  # blank layout
+        for slide_texts in slides:
+            slide = prs.slides.add_slide(blank_layout)
+            for txt in slide_texts:
+                txBox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+                txBox.text_frame.text = txt
+        buf = io.BytesIO()
+        prs.save(buf)
+        return buf.getvalue()
+
+    def test_extracts_slide_text(self):
+        from apps.embeddings.services import extract_text_from_pptx
+
+        pptx_bytes = self._make_pptx_bytes([["Slide one content"], ["Slide two content"]])
+        text = extract_text_from_pptx(pptx_bytes)
+        assert "Slide one content" in text
+        assert "Slide two content" in text
+        assert "[Slide 1]" in text
+        assert "[Slide 2]" in text
+
+    def test_raises_on_empty_pptx(self):
+        from apps.embeddings.services import extract_text_from_pptx
+
+        pptx_bytes = self._make_pptx_bytes([])
+        with pytest.raises(ValueError, match="No extractable text"):
+            extract_text_from_pptx(pptx_bytes)
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_csv
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromCsv:
+    def test_extracts_rows_with_headers(self):
+        from apps.embeddings.services import extract_text_from_csv
+
+        csv_bytes = b"name,age\nAlice,30\nBob,25"
+        text = extract_text_from_csv(csv_bytes)
+        assert "name: Alice" in text
+        assert "age: 30" in text
+        assert "[Row 1]" in text
+
+    def test_handles_tsv_delimiter(self):
+        from apps.embeddings.services import extract_text_from_csv
+
+        tsv_bytes = b"name\tage\nAlice\t30"
+        text = extract_text_from_csv(tsv_bytes, delimiter="\t")
+        assert "name: Alice" in text
+
+    def test_raises_on_empty_csv(self):
+        from apps.embeddings.services import extract_text_from_csv
+
+        with pytest.raises(ValueError, match="empty or contains no data"):
+            extract_text_from_csv(b"name,age\n")
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_json
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromJson:
+    def test_flat_json_object(self):
+        from apps.embeddings.services import extract_text_from_json
+
+        json_bytes = b'{"key": "value", "num": 42}'
+        text = extract_text_from_json(json_bytes)
+        assert "key: " in text
+        assert "value" in text
+
+    def test_jsonl_multiple_records(self):
+        from apps.embeddings.services import extract_text_from_json
+
+        jsonl_bytes = b'{"a": 1}\n{"b": 2}'
+        text = extract_text_from_json(jsonl_bytes)
+        assert "[Record 1]" in text
+        assert "[Record 2]" in text
+
+    def test_nested_json_flattened(self):
+        from apps.embeddings.services import extract_text_from_json
+
+        json_bytes = b'{"outer": {"inner": "deep"}}'
+        text = extract_text_from_json(json_bytes)
+        assert "deep" in text
+
+    def test_raises_on_empty_json(self):
+        from apps.embeddings.services import extract_text_from_json
+
+        with pytest.raises(ValueError, match="empty or contains no data"):
+            extract_text_from_json(b"{}")
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_xlsx
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromXlsx:
+    def _make_xlsx_bytes(self, rows: list[list[str]], sheet_name: str = "Sheet1") -> bytes:
+        import io
+        import openpyxl
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = sheet_name
+        for row in rows:
+            ws.append(row)
+        buf = io.BytesIO()
+        wb.save(buf)
+        return buf.getvalue()
+
+    def test_extracts_sheet_data(self):
+        from apps.embeddings.services import extract_text_from_xlsx
+
+        xlsx_bytes = self._make_xlsx_bytes([["Name", "Score"], ["Alice", "95"], ["Bob", "82"]])
+        text = extract_text_from_xlsx(xlsx_bytes)
+        assert "Name: Alice" in text
+        assert "Score: 95" in text
+        assert "[Sheet: Sheet1]" in text
+
+    def test_raises_on_empty_workbook(self):
+        from apps.embeddings.services import extract_text_from_xlsx
+
+        xlsx_bytes = self._make_xlsx_bytes([["Header1", "Header2"]])
+        with pytest.raises(ValueError, match="empty or contains no data"):
+            extract_text_from_xlsx(xlsx_bytes)
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_file (dispatch)
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromFile:
+    def test_dispatches_pdf(self, monkeypatch):
+        from apps.embeddings.services import extract_text_from_file
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.extract_text_from_pdf",
+            lambda b: "pdf content",
+        )
+        assert extract_text_from_file("doc.pdf", b"bytes") == "pdf content"
+
+    def test_dispatches_txt(self, monkeypatch):
+        from apps.embeddings.services import extract_text_from_file
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.extract_text_from_txt",
+            lambda b: "txt content",
+        )
+        assert extract_text_from_file("notes.txt", b"bytes") == "txt content"
+
+    def test_dispatches_md_to_txt_extractor(self, monkeypatch):
+        from apps.embeddings.services import extract_text_from_file
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.extract_text_from_txt",
+            lambda b: "md content",
+        )
+        assert extract_text_from_file("readme.md", b"bytes") == "md content"
+
+    def test_dispatches_csv(self, monkeypatch):
+        from apps.embeddings.services import extract_text_from_file
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.extract_text_from_csv",
+            lambda b: "csv content",
+        )
+        assert extract_text_from_file("data.csv", b"bytes") == "csv content"
+
+    def test_dispatches_xlsx(self, monkeypatch):
+        from apps.embeddings.services import extract_text_from_file
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.extract_text_from_xlsx",
+            lambda b: "xlsx content",
+        )
+        assert extract_text_from_file("sheet.xlsx", b"bytes") == "xlsx content"
+
+    def test_unknown_extension_raises_value_error(self):
+        from apps.embeddings.services import extract_text_from_file
+
+        with pytest.raises(ValueError, match="Unsupported file type"):
+            extract_text_from_file("malware.exe", b"bytes")
+
+    def test_case_insensitive_extension(self, monkeypatch):
+        from apps.embeddings.services import extract_text_from_file
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.extract_text_from_pdf",
+            lambda b: "pdf content",
+        )
+        assert extract_text_from_file("DOC.PDF", b"bytes") == "pdf content"

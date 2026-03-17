@@ -42,8 +42,10 @@ class DocumentListCreateView(generics.ListCreateAPIView):
         data = serializer.validated_data
         if data.get("file"):
             try:
-                content = services.extract_text_from_pdf(data["file"].read())
-            except ValueError as exc:
+                content = services.extract_text_from_file(
+                    data["file"].name, data["file"].read()
+                )
+            except (ValueError, Exception) as exc:
                 raise serializers.ValidationError({"file": str(exc)}) from exc
         else:
             content = data["content"]

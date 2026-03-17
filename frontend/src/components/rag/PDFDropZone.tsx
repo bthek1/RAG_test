@@ -8,6 +8,35 @@ interface PDFDropZoneProps {
   error?: string;
 }
 
+const ACCEPTED_EXTENSIONS = [
+  ".pdf", ".txt", ".md",
+  ".html", ".htm",
+  ".docx", ".pptx",
+  ".csv", ".tsv",
+  ".json", ".jsonl",
+  ".xlsx",
+] as const;
+
+const FILE_TYPE_LABELS: Record<string, string> = {
+  ".pdf": "PDF",
+  ".txt": "Plain Text",
+  ".md": "Markdown",
+  ".html": "HTML",
+  ".htm": "HTML",
+  ".docx": "Word Document",
+  ".pptx": "PowerPoint",
+  ".csv": "CSV",
+  ".tsv": "TSV",
+  ".json": "JSON",
+  ".jsonl": "JSONL",
+  ".xlsx": "Excel",
+};
+
+function getFileTypeLabel(name: string): string {
+  const ext = "." + name.toLowerCase().split(".").pop();
+  return FILE_TYPE_LABELS[ext] ?? "Document";
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -20,8 +49,11 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
   const [clientError, setClientError] = useState<string | null>(null);
 
   function handleFile(file: File) {
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
-      setClientError("Only PDF files are accepted.");
+    const ext = "." + file.name.toLowerCase().split(".").pop();
+    if (!ACCEPTED_EXTENSIONS.includes(ext as (typeof ACCEPTED_EXTENSIONS)[number])) {
+      setClientError(
+        `Unsupported file type '${ext}'. Allowed: ${ACCEPTED_EXTENSIONS.join(", ")}`
+      );
       return;
     }
     setClientError(null);
@@ -63,7 +95,7 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
     <div className="space-y-1.5">
       <div
         role="button"
-        aria-label="Upload a PDF file"
+        aria-label="Upload a document"
         tabIndex={0}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
@@ -83,7 +115,7 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf"
+          accept=".pdf,.txt,.md,.html,.htm,.docx,.pptx,.csv,.tsv,.json,.jsonl,.xlsx"
           className="hidden"
           onChange={handleInputChange}
           aria-hidden="true"
@@ -96,7 +128,7 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
               {value.name}
             </span>
             <span className="text-muted-foreground">
-              ({formatBytes(value.size)})
+              {getFileTypeLabel(value.name)} · {formatBytes(value.size)}
             </span>
             <button
               type="button"
@@ -114,14 +146,16 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
           <>
             <Paperclip className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Drag &amp; drop a PDF here, or{" "}
+              Drag &amp; drop a file here, or{" "}
               <span className="text-primary underline">click to browse</span>
             </p>
           </>
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">Max 50 MB · PDF only</p>
+      <p className="text-xs text-muted-foreground">
+        Max 50 MB · PDF, TXT, Markdown, HTML, DOCX, PPTX, CSV, TSV, JSON, JSONL, XLSX
+      </p>
 
       {displayError && (
         <p className="text-sm text-destructive">{displayError}</p>
