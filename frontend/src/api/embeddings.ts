@@ -50,6 +50,13 @@ export async function deleteDocument(id: string): Promise<void> {
   await apiClient.delete(`/api/embeddings/documents/${id}/`);
 }
 
+export async function listChunks(documentId: string): Promise<Chunk[]> {
+  const { data } = await apiClient.get<Chunk[]>(
+    `/api/embeddings/documents/${documentId}/chunks/`,
+  );
+  return data;
+}
+
 export async function searchSimilar(
   payload: SimilaritySearchRequest,
 ): Promise<Chunk[]> {

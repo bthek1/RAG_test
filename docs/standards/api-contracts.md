@@ -232,6 +232,31 @@ Delete a document and all its associated chunks (CASCADE).
 
 ---
 
+### `GET /api/embeddings/documents/{id}/chunks/`
+
+List all chunks for a document, ordered by `chunk_index`.
+
+**Auth:** `Authorization: Bearer <token>` required.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "<uuid>",
+    "document": "<document-uuid>",
+    "document_title": "My PDF",
+    "content": "First chunk of text...",
+    "chunk_index": 0,
+    "created_at": "2026-03-17T00:00:00Z",
+    "distance": null
+  }
+]
+```
+
+**Errors:** `401` — unauthorised, `404` — document not found
+
+---
+
 ### `POST /api/embeddings/search/`
 
 Similarity search — embed the query locally and return the top-k most similar chunks ranked by cosine distance.
@@ -245,19 +270,37 @@ Similarity search — embed the query locally and return the top-k most similar 
 ```
 `top_k` defaults to `5`, max `50`.
 
-**Response `200`:**
+**Response `200`:** Array of `Chunk` objects (see **Chunk object** below).
+
+**Errors:** `400` — missing or invalid query, `401`
+
+---
+
+### Chunk object
+
+All endpoints that return chunk data use this shape:
+
 ```json
-[
-  {
-    "id": "<uuid>",
-    "document": "<document-uuid>",
-    "content": "RAG combines a retriever with a language model...",
-    "chunk_index": 2,
-    "created_at": "2026-03-15T00:00:00Z",
-    "distance": 0.08
-  }
-]
+{
+  "id": "<uuid>",
+  "document": "<document-uuid>",
+  "document_title": "My Document",
+  "content": "RAG combines a retriever with a language model...",
+  "chunk_index": 2,
+  "created_at": "2026-03-15T00:00:00Z",
+  "distance": 0.08
+}
 ```
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | Chunk primary key |
+| `document` | UUID | Parent document ID |
+| `document_title` | string | Title of the parent document |
+| `content` | string | Raw chunk text |
+| `chunk_index` | integer | Zero-based position within the document |
+| `created_at` | ISO 8601 | When the chunk was created |
+| `distance` | float \| null | Cosine distance from query (only present in search/RAG results) |
 
 **Errors:** `400` — missing or invalid query, `401`
 

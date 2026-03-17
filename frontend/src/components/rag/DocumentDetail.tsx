@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDocument } from "@/hooks/useDocuments";
 import { formatDateTime } from "@/lib/date";
+import { ChunkList } from "./ChunkList";
 
 interface DocumentDetailProps {
   documentId: string;
@@ -46,6 +47,7 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
           <TabsList className="mx-4 mt-2 w-auto self-start">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="chunks">Chunks</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="flex-1 overflow-auto px-4 pb-4">
@@ -89,6 +91,13 @@ export function DocumentDetail({ documentId, onClose }: DocumentDetailProps) {
                 {doc.content}
               </pre>
             </ScrollArea>
+          </TabsContent>
+
+          <TabsContent
+            value="chunks"
+            className="flex-1 overflow-auto px-4 pb-4"
+          >
+            <ChunkList documentId={documentId} />
           </TabsContent>
         </Tabs>
       ) : (

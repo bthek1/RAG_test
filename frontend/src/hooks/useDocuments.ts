@@ -3,6 +3,7 @@ import {
   deleteDocument,
   getDocument,
   ingestDocument,
+  listChunks,
   listDocuments,
 } from "@/api/embeddings";
 import { queryKeys } from "@/api/queryKeys";
@@ -20,6 +21,16 @@ export function useDocument(id: string) {
     queryKey: queryKeys.embeddings.documents.detail(id),
     queryFn: () => getDocument(id),
     enabled: !!id,
+  });
+}
+
+export function useChunks(documentId: string | undefined) {
+  return useQuery({
+    queryKey: documentId
+      ? queryKeys.embeddings.documents.chunks(documentId)
+      : ["embeddings", "documents", undefined, "chunks"],
+    queryFn: () => listChunks(documentId!),
+    enabled: !!documentId,
   });
 }
 

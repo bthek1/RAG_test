@@ -1,4 +1,5 @@
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import services
-from .models import Document
+from .models import Chunk, Document
 from .serializers import (
     ChunkSerializer,
     DocumentIngestSerializer,
@@ -80,6 +81,21 @@ class DocumentDetailView(generics.RetrieveDestroyAPIView):
 
     def get_serializer_class(self):
         return DocumentSerializer
+
+
+class DocumentChunkListView(generics.ListAPIView):
+    """GET /api/embeddings/documents/{id}/chunks/ — list all chunks for a document."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChunkSerializer
+
+    def get_queryset(self):
+        doc = get_object_or_404(Document, id=self.kwargs["id"])
+        return (
+            Chunk.objects.filter(document=doc)
+            .select_related("document")
+            .order_by("chunk_index")
+        )
 
 
 class SimilaritySearchView(APIView):

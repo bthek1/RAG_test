@@ -33,10 +33,22 @@ class DocumentIngestSerializer(serializers.Serializer):
 
 class ChunkSerializer(serializers.ModelSerializer):
     distance = serializers.FloatField(read_only=True, required=False)
+    document_title = serializers.SerializerMethodField()
+
+    def get_document_title(self, obj: Chunk) -> str:  # type: ignore[override]
+        return obj.document.title
 
     class Meta:
         model = Chunk
-        fields = ["id", "document", "content", "chunk_index", "created_at", "distance"]
+        fields = [
+            "id",
+            "document",
+            "document_title",
+            "content",
+            "chunk_index",
+            "created_at",
+            "distance",
+        ]
         read_only_fields = ["id", "document", "chunk_index", "created_at"]
 
 

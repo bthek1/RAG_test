@@ -20,6 +20,7 @@ export interface DocumentListItem {
 export interface Chunk {
   id: string;
   document: string;
+  document_title?: string;
   content: string;
   chunk_index: number;
   created_at: string;

@@ -8,6 +8,8 @@ export const queryKeys = {
     documents: {
       all: ["embeddings", "documents"] as const,
       detail: (id: string) => ["embeddings", "documents", id] as const,
+      chunks: (id: string) =>
+        ["embeddings", "documents", id, "chunks"] as const,
     },
   },
 } as const;

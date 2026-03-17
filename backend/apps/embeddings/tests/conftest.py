@@ -4,8 +4,21 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from django.contrib.auth import get_user_model
 
 from apps.embeddings.services import EMBEDDING_DIMENSIONS
+
+User = get_user_model()
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def admin_user(db):
+    """Create a superuser for admin view tests."""
+    return User.objects.create_superuser(
+        email="admin@example.com",
+        password="adminpassword",
+    )
 
 
 @pytest.fixture
