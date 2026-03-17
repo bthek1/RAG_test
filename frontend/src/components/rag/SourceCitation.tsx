@@ -1,0 +1,48 @@
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { getSimilarityColor, toSimilarityPercent } from "@/lib/similarity";
+import type { RAGSource } from "@/types/embeddings";
+import { cn } from "@/lib/utils";
+
+interface SourceCitationProps {
+  source: RAGSource;
+  index: number;
+}
+
+export function SourceCitation({ source, index }: SourceCitationProps) {
+  const pct = toSimilarityPercent(source.distance);
+  const colorClass = getSimilarityColor(pct);
+
+  return (
+    <AccordionItem value={`source-${index}`} className="border rounded-md px-2">
+      <AccordionTrigger className="py-2 text-xs hover:no-underline">
+        <div className="flex items-center gap-2 text-left">
+          <span className="shrink-0 text-muted-foreground">#{index + 1}</span>
+          <span className="truncate font-medium">{source.document_title}</span>
+          <Badge
+            variant="outline"
+            className={cn("shrink-0 text-[10px] font-semibold", colorClass)}
+          >
+            {pct}%
+          </Badge>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="pb-2">
+        <ScrollArea className="h-24 rounded bg-muted/40 p-2">
+          <p className="text-xs leading-relaxed text-foreground">
+            {source.content}
+          </p>
+        </ScrollArea>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Cosine distance: {source.distance.toFixed(4)} · Chunk ID:{" "}
+          <span className="font-mono">{source.chunk_id.slice(0, 8)}…</span>
+        </p>
+      </AccordionContent>
+    </AccordionItem>
+  );
+}

@@ -7,6 +7,7 @@ from apps.embeddings.services import (
     EMBEDDING_DIMENSIONS,
     chunk_document,
     embed_texts,
+    extract_text_from_pdf,
     generate_answer,
 )
 
@@ -160,3 +161,52 @@ class TestGenerateAnswer:
         user_msg = captured["messages"][0]["content"]
         assert "context chunk text" in user_msg
         assert "my question" in user_msg
+
+
+# ---------------------------------------------------------------------------
+# extract_text_from_pdf
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTextFromPdf:
+    def _mock_reader(self, monkeypatch, pages_text: list[str]):
+        """Patch PdfReader to return pages with the given text strings."""
+        from unittest.mock import MagicMock
+
+        mock_pages = []
+        for t in pages_text:
+            page = MagicMock()
+            page.extract_text.return_value = t
+            mock_pages.append(page)
+
+        mock_reader = MagicMock()
+        mock_reader.pages = mock_pages
+        monkeypatch.setattr(
+            "apps.embeddings.services.PdfReader", lambda _buf: mock_reader
+        )
+
+    def test_extracts_text_from_single_page(self, monkeypatch):
+        self._mock_reader(monkeypatch, ["Hello, PDF world!"])
+        text = extract_text_from_pdf(b"fake")
+        assert "Hello, PDF world!" in text
+
+    def test_joins_multiple_pages(self, monkeypatch):
+        self._mock_reader(monkeypatch, ["Page one content.", "Page two content."])
+        text = extract_text_from_pdf(b"fake")
+        assert "Page one content." in text
+        assert "Page two content." in text
+
+    def test_raises_value_error_when_all_pages_empty(self, monkeypatch):
+        self._mock_reader(monkeypatch, ["", "  ", ""])
+        with pytest.raises(ValueError, match="No extractable text"):
+            extract_text_from_pdf(b"fake")
+
+    def test_raises_value_error_for_zero_pages(self, monkeypatch):
+        self._mock_reader(monkeypatch, [])
+        with pytest.raises(ValueError, match="No extractable text"):
+            extract_text_from_pdf(b"fake")
+
+    def test_skips_blank_pages(self, monkeypatch):
+        self._mock_reader(monkeypatch, ["", "Real content here.", ""])
+        text = extract_text_from_pdf(b"fake")
+        assert "Real content here." in text

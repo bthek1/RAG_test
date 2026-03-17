@@ -259,3 +259,98 @@ class TestRAGView:
             self.URL, {"query": "test", "top_k": 100}, format="json"
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+# ---------------------------------------------------------------------------
+# PDF upload — DocumentListCreateView multipart path
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestPDFUpload:
+    URL = "/api/embeddings/documents/"
+
+    def _pdf_upload(self, client, pdf_bytes: bytes, filename="test.pdf", **extra):
+        """POST a multipart/form-data request with a PDF file field."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile(
+            filename, pdf_bytes, content_type="application/pdf"
+        )
+        return client.post(
+            self.URL,
+            {"title": "PDF Doc", "file": file_obj, **extra},
+            format="multipart",
+        )
+
+    def test_pdf_upload_valid(self, authenticated_client):
+        """Valid PDF content → 201 with chunk_count ≥ 1."""
+        extracted_text = "This is page one. " * 30
+
+        with (
+            patch("apps.embeddings.services.extract_text_from_pdf") as mock_extract,
+            patch("apps.embeddings.services.embed_texts") as mock_embed,
+        ):
+            mock_extract.return_value = extracted_text
+            mock_embed.return_value = [[0.0] * _DIMS]
+            response = self._pdf_upload(authenticated_client, b"fake-pdf")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["chunk_count"] >= 1
+
+    def test_pdf_upload_image_only(self, authenticated_client):
+        """extract_text_from_pdf raises ValueError → 400 with file error."""
+        with patch("apps.embeddings.services.extract_text_from_pdf") as mock_extract:
+            mock_extract.side_effect = ValueError("No extractable text found.")
+            response = self._pdf_upload(authenticated_client, b"image-pdf")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_pdf_upload_too_large(self, authenticated_client):
+        """File exceeding 50 MB → 400."""
+        fifty_one_mb = b"x" * (51 * 1024 * 1024)
+        response = self._pdf_upload(authenticated_client, fifty_one_mb)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_pdf_upload_wrong_extension(self, authenticated_client):
+        """Non-.pdf filename → 400."""
+        response = self._pdf_upload(authenticated_client, b"data", filename="doc.txt")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_pdf_upload_with_content_also_present(self, authenticated_client):
+        """Providing both file and content → 400."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile(
+            "test.pdf", b"fake", content_type="application/pdf"
+        )
+        response = authenticated_client.post(
+            self.URL,
+            {"title": "Both", "file": file_obj, "content": "some text"},
+            format="multipart",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_neither_content_nor_file(self, authenticated_client):
+        """No content or file → 400."""
+        response = authenticated_client.post(
+            self.URL, {"title": "Nothing"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_text_ingest_still_works(self, authenticated_client):
+        """Original JSON text path must remain functional."""
+        with patch("apps.embeddings.services.embed_texts") as mock_embed:
+            mock_embed.return_value = [[0.0] * _DIMS]
+            response = authenticated_client.post(
+                self.URL,
+                {
+                    "title": "Text Doc",
+                    "content": "Some text content here.",
+                    "source": "",
+                },
+                format="json",
+            )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["title"] == "Text Doc"

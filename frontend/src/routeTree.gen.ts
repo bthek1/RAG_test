@@ -10,13 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as RagRouteImport } from './routes/rag'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RagSearchRouteImport } from './routes/rag.search'
+import { Route as RagDocumentsRouteImport } from './routes/rag.documents'
+import { Route as RagChatRouteImport } from './routes/rag.chat'
 import { Route as DemoChartRouteImport } from './routes/demo.chart'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RagRoute = RagRouteImport.update({
+  id: '/rag',
+  path: '/rag',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -29,6 +38,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RagSearchRoute = RagSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => RagRoute,
+} as any)
+const RagDocumentsRoute = RagDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => RagRoute,
+} as any)
+const RagChatRoute = RagChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => RagRoute,
+} as any)
 const DemoChartRoute = DemoChartRouteImport.update({
   id: '/demo/chart',
   path: '/demo/chart',
@@ -38,33 +62,71 @@ const DemoChartRoute = DemoChartRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/rag': typeof RagRouteWithChildren
   '/signup': typeof SignupRoute
   '/demo/chart': typeof DemoChartRoute
+  '/rag/chat': typeof RagChatRoute
+  '/rag/documents': typeof RagDocumentsRoute
+  '/rag/search': typeof RagSearchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/rag': typeof RagRouteWithChildren
   '/signup': typeof SignupRoute
   '/demo/chart': typeof DemoChartRoute
+  '/rag/chat': typeof RagChatRoute
+  '/rag/documents': typeof RagDocumentsRoute
+  '/rag/search': typeof RagSearchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/rag': typeof RagRouteWithChildren
   '/signup': typeof SignupRoute
   '/demo/chart': typeof DemoChartRoute
+  '/rag/chat': typeof RagChatRoute
+  '/rag/documents': typeof RagDocumentsRoute
+  '/rag/search': typeof RagSearchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/demo/chart'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/rag'
+    | '/signup'
+    | '/demo/chart'
+    | '/rag/chat'
+    | '/rag/documents'
+    | '/rag/search'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/demo/chart'
-  id: '__root__' | '/' | '/login' | '/signup' | '/demo/chart'
+  to:
+    | '/'
+    | '/login'
+    | '/rag'
+    | '/signup'
+    | '/demo/chart'
+    | '/rag/chat'
+    | '/rag/documents'
+    | '/rag/search'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/rag'
+    | '/signup'
+    | '/demo/chart'
+    | '/rag/chat'
+    | '/rag/documents'
+    | '/rag/search'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  RagRoute: typeof RagRouteWithChildren
   SignupRoute: typeof SignupRoute
   DemoChartRoute: typeof DemoChartRoute
 }
@@ -76,6 +138,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rag': {
+      id: '/rag'
+      path: '/rag'
+      fullPath: '/rag'
+      preLoaderRoute: typeof RagRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -92,6 +161,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rag/search': {
+      id: '/rag/search'
+      path: '/search'
+      fullPath: '/rag/search'
+      preLoaderRoute: typeof RagSearchRouteImport
+      parentRoute: typeof RagRoute
+    }
+    '/rag/documents': {
+      id: '/rag/documents'
+      path: '/documents'
+      fullPath: '/rag/documents'
+      preLoaderRoute: typeof RagDocumentsRouteImport
+      parentRoute: typeof RagRoute
+    }
+    '/rag/chat': {
+      id: '/rag/chat'
+      path: '/chat'
+      fullPath: '/rag/chat'
+      preLoaderRoute: typeof RagChatRouteImport
+      parentRoute: typeof RagRoute
+    }
     '/demo/chart': {
       id: '/demo/chart'
       path: '/demo/chart'
@@ -102,9 +192,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface RagRouteChildren {
+  RagChatRoute: typeof RagChatRoute
+  RagDocumentsRoute: typeof RagDocumentsRoute
+  RagSearchRoute: typeof RagSearchRoute
+}
+
+const RagRouteChildren: RagRouteChildren = {
+  RagChatRoute: RagChatRoute,
+  RagDocumentsRoute: RagDocumentsRoute,
+  RagSearchRoute: RagSearchRoute,
+}
+
+const RagRouteWithChildren = RagRoute._addFileChildren(RagRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  RagRoute: RagRouteWithChildren,
   SignupRoute: SignupRoute,
   DemoChartRoute: DemoChartRoute,
 }

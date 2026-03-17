@@ -153,7 +153,9 @@ All endpoints under `/api/embeddings/` require a Bearer JWT token.
 
 Ingest a new document — triggers chunking and local embedding. All chunk vectors are stored in Postgres via pgvector.
 
-**Request body:**
+Two variants are supported (mutually exclusive):
+
+**Variant A — JSON text (`Content-Type: application/json`):**
 ```json
 {
   "title": "My Document",
@@ -161,9 +163,17 @@ Ingest a new document — triggers chunking and local embedding. All chunk vecto
   "source": "https://example.com/doc"
 }
 ```
-`source` is optional (URL or file path for attribution, not fetched).
+`source` is optional. `content` must be a non-empty string.
 
-**Response `201`:**
+**Variant B — PDF upload (`Content-Type: multipart/form-data`):**
+```
+title=My Document
+file=<PDF binary>
+source=https://example.com/doc   (optional)
+```
+The backend extracts plain text from the PDF using `pypdf` and then runs the same chunking → embedding → storage pipeline. Max file size: 50 MB. Only `.pdf` files are accepted.
+
+**Response `201` (both variants):**
 ```json
 {
   "id": "<uuid>",
@@ -176,7 +186,9 @@ Ingest a new document — triggers chunking and local embedding. All chunk vecto
 }
 ```
 
-**Errors:** `400` — validation error, `401` — unauthorised
+**Errors:**
+- `400` — validation error (missing both `content` and `file`, both provided, file too large, non-PDF file, image-only PDF with no extractable text)
+- `401` — unauthorised
 
 ---
 

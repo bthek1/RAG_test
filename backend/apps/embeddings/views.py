@@ -1,5 +1,6 @@
 from django.db.models import Count
-from rest_framework import generics, status
+from rest_framework import generics, serializers, status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -9,6 +10,7 @@ from . import services
 from .models import Document
 from .serializers import (
     ChunkSerializer,
+    DocumentIngestSerializer,
     DocumentListSerializer,
     DocumentSerializer,
     RAGRequestSerializer,
@@ -19,10 +21,11 @@ from .serializers import (
 
 class DocumentListCreateView(generics.ListCreateAPIView):
     """GET /api/embeddings/documents/  — list documents (paginated).
-    POST /api/embeddings/documents/ — ingest a new document.
+    POST /api/embeddings/documents/ — ingest a document (JSON text or multipart PDF).
     """
 
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
         return Document.objects.annotate(chunk_count=Count("chunks")).order_by(
@@ -31,15 +34,23 @@ class DocumentListCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "POST":
-            return DocumentSerializer
+            return DocumentIngestSerializer
         return DocumentListSerializer
 
     def perform_create(self, serializer):
-        # Delegate to the service layer; ignore the default save()
+        data = serializer.validated_data
+        if data.get("file"):
+            try:
+                content = services.extract_text_from_pdf(data["file"].read())
+            except ValueError as exc:
+                raise serializers.ValidationError({"file": str(exc)}) from exc
+        else:
+            content = data["content"]
+
         services.ingest_document(
-            title=serializer.validated_data["title"],
-            content=serializer.validated_data["content"],
-            source=serializer.validated_data.get("source", ""),
+            title=data["title"],
+            content=content,
+            source=data.get("source", ""),
         )
 
     def create(self, request: Request, *_args, **_kwargs) -> Response:

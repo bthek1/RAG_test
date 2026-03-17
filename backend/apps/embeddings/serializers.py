@@ -3,6 +3,34 @@ from rest_framework import serializers
 from .models import Chunk, Document
 
 
+class DocumentIngestSerializer(serializers.Serializer):
+    """Accepts either plaintext `content` or a PDF `file` — not both."""
+
+    title = serializers.CharField(max_length=512)
+    source = serializers.CharField(max_length=1024, required=False, allow_blank=True)
+    content = serializers.CharField(required=False, allow_blank=False)
+    file = serializers.FileField(required=False)
+
+    def validate_file(self, value):
+        max_mb = 50
+        if value.size > max_mb * 1024 * 1024:
+            raise serializers.ValidationError(f"PDF must be under {max_mb} MB.")
+        if not value.name.lower().endswith(".pdf"):
+            raise serializers.ValidationError("Only PDF files are accepted.")
+        return value
+
+    def validate(self, data):
+        has_content = bool(data.get("content", "").strip())
+        has_file = bool(data.get("file"))
+        if not has_content and not has_file:
+            raise serializers.ValidationError(
+                "Provide either 'content' (text) or 'file' (PDF)."
+            )
+        if has_content and has_file:
+            raise serializers.ValidationError("Provide 'content' or 'file', not both.")
+        return data
+
+
 class ChunkSerializer(serializers.ModelSerializer):
     distance = serializers.FloatField(read_only=True, required=False)
 

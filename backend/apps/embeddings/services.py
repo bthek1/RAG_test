@@ -6,14 +6,37 @@ Generation backend: Anthropic Claude (ANTHROPIC_API_KEY required for RAG).
 
 from __future__ import annotations
 
+import io
 import os
 import re
 
 import anthropic
 from django.core.exceptions import ImproperlyConfigured
 from pgvector.django import CosineDistance
+from pypdf import PdfReader
 
 from .models import Chunk, Document
+
+# ---------------------------------------------------------------------------
+# PDF Extraction
+# ---------------------------------------------------------------------------
+
+
+def extract_text_from_pdf(file_bytes: bytes) -> str:
+    """Extract plain text from a PDF byte stream.
+
+    Raises ValueError if the PDF produces no extractable text
+    (e.g. scanned image-only PDF with no OCR layer).
+    """
+    reader = PdfReader(io.BytesIO(file_bytes))
+    pages = [page.extract_text() or "" for page in reader.pages]
+    text = "\n\n".join(p.strip() for p in pages if p.strip())
+    if not text:
+        raise ValueError(
+            "No extractable text found. The PDF may be scanned or image-only."
+        )
+    return text
+
 
 # ---------------------------------------------------------------------------
 # Chunking

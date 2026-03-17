@@ -240,6 +240,7 @@ dependencies = [
     { name = "gunicorn" },
     { name = "pgvector" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pypdf" },
     { name = "sentence-transformers" },
 ]
 
@@ -268,6 +269,7 @@ requires-dist = [
     { name = "gunicorn", specifier = "~=23.0" },
     { name = "pgvector", specifier = "~=0.3" },
     { name = "psycopg", extras = ["binary"], specifier = "~=3.2" },
+    { name = "pypdf", specifier = ">=4.0" },
     { name = "sentence-transformers", specifier = ">=3.0" },
 ]
 
@@ -1134,6 +1136,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b5/05/324952ded002de746f87b21066b9373080bb5058f64cf01c4d62784b8186/pyjwt-2.10.0.tar.gz", hash = "sha256:7628a7eb7938959ac1b26e819a1df0fd3259505627b575e4bad6d08f76db695c", size = 87687, upload-time = "2024-11-17T10:19:49.26Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6f/1d/ef9b066e7ef60494c94173dc9f0b9adf5d9ec5f888109f5c669f53d4144b/PyJWT-2.10.0-py3-none-any.whl", hash = "sha256:543b77207db656de204372350926bed5a86201c4cbff159f623f79c7bb487a15", size = 23002, upload-time = "2024-11-17T10:19:46.81Z" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/a3/e705b0805212b663a4c27b861c8a603dba0f8b4bb281f96f8e746576a50d/pypdf-6.8.0.tar.gz", hash = "sha256:cb7eaeaa4133ce76f762184069a854e03f4d9a08568f0e0623f7ea810407833b", size = 5307831, upload-time = "2026-03-09T13:37:40.591Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/ec/4ccf3bb86b1afe5d7176e1c8abcdbf22b53dd682ec2eda50e1caadcf6846/pypdf-6.8.0-py3-none-any.whl", hash = "sha256:2a025080a8dd73f48123c89c57174a5ff3806c71763ee4e49572dc90454943c7", size = 332177, upload-time = "2026-03-09T13:37:38.774Z" },
 ]
 
 [[package]]

@@ -15,3 +15,4 @@ Requires-Dist: psycopg[binary]~=3.2
 Requires-Dist: pgvector~=0.3
 Requires-Dist: sentence-transformers>=3.0
 Requires-Dist: anthropic>=0.25
+Requires-Dist: pypdf>=4.0
