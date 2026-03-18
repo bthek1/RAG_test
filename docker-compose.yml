@@ -26,6 +26,7 @@ services:
     volumes:
       - ./backend:/app
       - backend_venv:/app/.venv
+      - ./models:/models
     depends_on:
       - db
       - redis
@@ -35,6 +36,7 @@ services:
     environment:
       DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb
       CELERY_BROKER_URL: redis://redis:6379/0
+      HF_HOME: /models/huggingface
 
   celery_beat:
     build: ./backend
@@ -68,6 +70,7 @@ services:
     volumes:
       - ./backend:/app
       - backend_venv:/app/.venv
+      - ./models:/models
     ports:
       - "8005:8005"
     depends_on:
@@ -77,6 +80,7 @@ services:
         required: false
     environment:
       DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb
+      HF_HOME: /models/huggingface
 
   frontend:
     build: ./frontend

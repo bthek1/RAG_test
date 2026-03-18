@@ -315,7 +315,9 @@ class TestPDFUpload:
 
     def test_pdf_upload_unsupported_extension(self, authenticated_client):
         """Completely unsupported extension (.exe) → 400."""
-        response = self._pdf_upload(authenticated_client, b"data", filename="malware.exe")
+        response = self._pdf_upload(
+            authenticated_client, b"data", filename="malware.exe"
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_pdf_upload_with_content_also_present(self, authenticated_client):
@@ -368,7 +370,13 @@ class TestMultiFormatUpload:
 
     URL = "/api/embeddings/documents/"
 
-    def _upload(self, client, filename: str, file_bytes: bytes, content_type: str = "application/octet-stream"):
+    def _upload(
+        self,
+        client,
+        filename: str,
+        file_bytes: bytes,
+        content_type: str = "application/octet-stream",
+    ):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         file_obj = SimpleUploadedFile(filename, file_bytes, content_type=content_type)
@@ -394,21 +402,33 @@ class TestMultiFormatUpload:
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_html_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "page.html", b"<p>Hello</p>", "text/html")
+        response = self._upload(
+            authenticated_client, "page.html", b"<p>Hello</p>", "text/html"
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_htm_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "page.htm", b"<p>Hello</p>", "text/html")
+        response = self._upload(
+            authenticated_client, "page.htm", b"<p>Hello</p>", "text/html"
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_docx_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "report.docx", b"fake-docx",
-                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response = self._upload(
+            authenticated_client,
+            "report.docx",
+            b"fake-docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_pptx_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "slides.pptx", b"fake-pptx",
-                                "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        response = self._upload(
+            authenticated_client,
+            "slides.pptx",
+            b"fake-pptx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_csv_upload(self, authenticated_client):
@@ -416,11 +436,15 @@ class TestMultiFormatUpload:
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_tsv_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "data.tsv", b"name\tage\nAlice\t30")
+        response = self._upload(
+            authenticated_client, "data.tsv", b"name\tage\nAlice\t30"
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_json_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "data.json", b'{"key": "value"}', "application/json")
+        response = self._upload(
+            authenticated_client, "data.json", b'{"key": "value"}', "application/json"
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_jsonl_upload(self, authenticated_client):
@@ -428,14 +452,20 @@ class TestMultiFormatUpload:
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_xlsx_upload(self, authenticated_client):
-        response = self._upload(authenticated_client, "sheet.xlsx", b"fake-xlsx",
-                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response = self._upload(
+            authenticated_client,
+            "sheet.xlsx",
+            b"fake-xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_unsupported_extension_rejected(self, authenticated_client):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
-        file_obj = SimpleUploadedFile("archive.zip", b"fake", content_type="application/zip")
+        file_obj = SimpleUploadedFile(
+            "archive.zip", b"fake", content_type="application/zip"
+        )
         response = authenticated_client.post(
             self.URL,
             {"title": "Zip file", "file": file_obj},
@@ -457,3 +487,166 @@ class TestMultiFormatUpload:
             )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "file" in response.data
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestDocumentStatusView:
+    """Tests for GET /api/embeddings/documents/<id>/status/"""
+
+    URL = "/api/embeddings/documents/{id}/status/"
+
+    def _create_document(self, client, *, title="Status Doc", content="Some content."):
+        with patch("apps.embeddings.services.embed_texts") as mock_embed:
+            mock_embed.return_value = [[0.0] * _DIMS]
+            response = client.post(
+                "/api/embeddings/documents/",
+                {"title": title, "content": content, "source": ""},
+                format="json",
+            )
+        return response.data["id"]
+
+    def test_requires_authentication(self, api_client):
+        import uuid
+
+        response = api_client.get(self.URL.format(id=uuid.uuid4()))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_returns_status_and_chunk_count(self, authenticated_client):
+        doc_id = self._create_document(authenticated_client)
+        response = authenticated_client.get(self.URL.format(id=doc_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == doc_id
+        assert "status" in response.data
+        assert "chunk_count" in response.data
+        assert isinstance(response.data["chunk_count"], int)
+
+    def test_chunk_count_reflects_ingestion(self, authenticated_client):
+        """chunk_count equals the number of chunks created during ingestion."""
+        with patch("apps.embeddings.services.embed_texts") as mock_embed:
+            mock_embed.return_value = [[0.0] * _DIMS, [0.0] * _DIMS]
+            response = authenticated_client.post(
+                "/api/embeddings/documents/",
+                {"title": "Two Chunk Doc", "content": "chunk one. chunk two.", "source": ""},
+                format="json",
+            )
+        doc_id = response.data["id"]
+        status_response = authenticated_client.get(self.URL.format(id=doc_id))
+        assert status_response.status_code == status.HTTP_200_OK
+        assert status_response.data["chunk_count"] >= 0
+
+    def test_returns_404_for_unknown_id(self, authenticated_client):
+        import uuid
+
+        response = authenticated_client.get(self.URL.format(id=uuid.uuid4()))
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_response_contains_only_expected_fields(self, authenticated_client):
+        doc_id = self._create_document(authenticated_client)
+        response = authenticated_client.get(self.URL.format(id=doc_id))
+        assert set(response.data.keys()) == {"id", "status", "chunk_count"}
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestTaskStatusView:
+    """Tests for GET /api/embeddings/tasks/<task_id>/"""
+
+    URL = "/api/embeddings/tasks/{task_id}/"
+
+    def test_requires_authentication(self, api_client):
+        response = api_client.get(self.URL.format(task_id="fake-id"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_returns_pending_for_unknown_task(self, authenticated_client):
+        """An unknown task ID returns PENDING status with no result."""
+        with patch("apps.embeddings.views.AsyncResult") as mock_ar:
+            instance = mock_ar.return_value
+            instance.status = "PENDING"
+            instance.result = None
+            instance.traceback = None
+            instance.successful.return_value = False
+            response = authenticated_client.get(
+                self.URL.format(task_id="aaaaaaaa-0000-0000-0000-000000000001")
+            )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "PENDING"
+        assert response.data["result"] is None
+        assert response.data["traceback"] is None
+        assert response.data["task_id"] == "aaaaaaaa-0000-0000-0000-000000000001"
+
+    def test_returns_result_on_success(self, authenticated_client):
+        """A successful task returns its result payload."""
+        with patch("apps.embeddings.views.AsyncResult") as mock_ar:
+            instance = mock_ar.return_value
+            instance.status = "SUCCESS"
+            instance.result = {"chunks": 5}
+            instance.traceback = None
+            instance.successful.return_value = True
+            response = authenticated_client.get(
+                self.URL.format(task_id="bbbbbbbb-0000-0000-0000-000000000001")
+            )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "SUCCESS"
+        assert response.data["result"] == {"chunks": 5}
+        assert response.data["traceback"] is None
+
+    def test_omits_result_on_failure(self, authenticated_client):
+        """A failed task returns None for result and includes traceback."""
+        with patch("apps.embeddings.views.AsyncResult") as mock_ar:
+            instance = mock_ar.return_value
+            instance.status = "FAILURE"
+            instance.result = None
+            instance.traceback = "Traceback (most recent call last):..."
+            instance.successful.return_value = False
+            response = authenticated_client.get(
+                self.URL.format(task_id="cccccccc-0000-0000-0000-000000000001")
+            )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "FAILURE"
+        assert response.data["result"] is None
+        assert response.data["traceback"] is not None
+
+    def test_result_is_none_when_not_successful(self, authenticated_client):
+        """Even if result attr is non-None, view returns None unless successful."""
+        with patch("apps.embeddings.views.AsyncResult") as mock_ar:
+            instance = mock_ar.return_value
+            instance.status = "STARTED"
+            instance.result = "intermediate"
+            instance.traceback = None
+            instance.successful.return_value = False
+            response = authenticated_client.get(
+                self.URL.format(task_id="dddddddd-0000-0000-0000-000000000001")
+            )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["result"] is None
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestRevokeTaskView:
+    """Tests for POST /api/embeddings/tasks/<task_id>/revoke/"""
+
+    URL = "/api/embeddings/tasks/{task_id}/revoke/"
+
+    def test_requires_authentication(self, api_client):
+        response = api_client.post(self.URL.format(task_id="fake-id"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_revokes_task_and_returns_confirmation(self, authenticated_client):
+        """Calls revoke(terminate=True) and returns {task_id, revoked: True}."""
+        task_id = "eeeeeeee-0000-0000-0000-000000000001"
+        with patch("apps.embeddings.views.AsyncResult") as mock_ar:
+            response = authenticated_client.post(self.URL.format(task_id=task_id))
+            mock_ar.assert_called_once_with(task_id)
+            mock_ar.return_value.revoke.assert_called_once_with(terminate=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["revoked"] is True
+        assert response.data["task_id"] == task_id
+
+    def test_get_method_not_allowed(self, authenticated_client):
+        """GET is not supported on the revoke endpoint."""
+        response = authenticated_client.get(
+            self.URL.format(task_id="ffffffff-0000-0000-0000-000000000001")
+        )
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED

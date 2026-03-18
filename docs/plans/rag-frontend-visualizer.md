@@ -1,7 +1,7 @@
 # Plan: RAG Frontend Visualizer (Part 2)
 
-**Status:** In Progress — Implementation complete; RAG component tests and route smoke tests still pending  
-**Date:** 2026-03-15  
+**Status:** Complete  
+**Date:** 2026-03-18  
 **Depends on:** `docs/plans/completed/rag-implementation-plan.md` (Part 1 — fully complete)
 
 ---
@@ -707,75 +707,74 @@ A "Why am I seeing these results?" collapse panel explains: "These chunks had th
 - [x] `useRAGQuery()` exposes the error when the mutation fails
 
 **Component tests — `PipelineStep`** (`frontend/src/components/rag/PipelineStep.test.tsx`):
-- [ ] Renders icon, label, and description
-- [ ] Applies `idle` / `active` / `done` visual state classes correctly
-- [ ] Tooltip text is accessible on focus
+- [x] Renders icon, label, and description
+- [x] Applies `idle` / `active` / `done` visual state classes correctly
+- [x] Tooltip text is accessible on focus
 
 **Component tests — `RAGPipelineVisualizer`** (`frontend/src/components/rag/RAGPipelineVisualizer.test.tsx`):
-- [ ] Renders without crashing
-- [ ] Ingestion pipeline steps are all present in the DOM
-- [ ] Query pipeline steps are all present in the DOM
-- [ ] Embedder step is visually highlighted (shared-model highlight class is present)
-- [ ] `liveStep` prop causes the active step to have the `active` state class
+- [x] Renders without crashing
+- [x] Ingestion pipeline steps are all present in the DOM
+- [x] Query pipeline steps are all present in the DOM
+- [x] Embedder step is visually highlighted (shared-model highlight class is present)
+- [x] `liveStep` prop causes the active step to have the `active` state class
 
 **Component tests — `IngestDocumentForm`** (`frontend/src/components/rag/IngestDocumentForm.test.tsx`):
-- [ ] Renders Title, Source, and Content fields
-- [ ] Submit button is disabled while the mutation is pending
-- [ ] Shows Zod validation error when title is left empty
-- [ ] Shows Zod validation error when content is too short
-- [ ] Calls `useIngestDocument().mutate` with correct values on valid submit
-- [ ] Shows "Chunking → Embedding → Storing" step indicator while `isPending`
-- [ ] Clears form fields on successful submission
-- [ ] Shows inline error message when mutation returns an error
-- [ ] Shows soft warning when content length exceeds 50 000 characters
+- [x] Renders Title, Source, and Content fields
+- [x] Submit button is disabled while the mutation is pending
+- [x] Shows Zod validation error when title is left empty
+- [x] Shows Zod validation error when content is too short
+- [x] Calls `useIngestDocument().mutate` with correct values on valid submit
+- [x] Shows "Chunking → Embedding → Storing" step indicator while `isPending`
+- [x] Clears form fields on successful submission
+- [x] Shows inline error message when mutation returns an error
+- [x] Shows soft warning when content length exceeds 50 000 characters
 
 **Component tests — `DocumentCard`** (`frontend/src/components/rag/DocumentCard.test.tsx`):
-- [ ] Renders title, source, chunk count badge, and `created_at`
-- [ ] Omits source element when `source` is null/undefined
-- [ ] Clicking the card fires `onSelect` callback
-- [ ] Clicking the delete button fires `onDelete` callback
+- [x] Renders title, source, chunk count badge, and `created_at`
+- [x] Omits source element when `source` is null/undefined
+- [x] Clicking the card fires `onSelect` callback
+- [x] Clicking the delete button fires `onDelete` callback
 
 **Component tests — `DocumentDetail`** (`frontend/src/components/rag/DocumentDetail.test.tsx`):
-- [ ] Renders document title and content
-- [ ] Displays chunk count
-- [ ] Switching to the "Chunks" tab renders numbered chunk cards
-- [ ] Shows scrollable content area for long documents
+- [x] Renders document title and content
+- [x] Displays chunk count
+- [x] Switching to the "Chunks" tab renders numbered chunk cards
+- [x] Shows scrollable content area for long documents
 
 **Component tests — `SearchResultCard`** (`frontend/src/components/rag/SearchResultCard.test.tsx`):
-- [ ] `distance = 0` → displays "100% similar" with green progress bar
-- [ ] `distance = 0.5` → displays "50% similar" with amber progress bar
-- [ ] `distance = 1.0` → displays "0% similar" with red progress bar
-- [ ] `distance = -0.05` → clamped, displays "100% similar" (no negative values)
-- [ ] Renders document title and chunk index
-- [ ] Renders truncated chunk content text
+- [x] `distance = 0` → displays "100% similar" with green progress bar
+- [x] `distance = 0.5` → displays "50% similar" with amber progress bar
+- [x] `distance = 1.0` → displays "0% similar" with red progress bar
+- [x] `distance = -0.05` → clamped, displays "100% similar" (no negative values)
+- [x] Renders document title and chunk index
+- [x] Renders truncated chunk content text
 
 **Component tests — `ChatMessage`** (`frontend/src/components/rag/ChatMessage.test.tsx`):
-- [ ] `type = 'user'` renders the query text without sources section
-- [ ] `type = 'assistant'` renders the answer text
-- [ ] `type = 'assistant'` with sources renders the "Sources" accordion
-- [ ] `isLoading = true` renders `TypingIndicator` instead of answer text
-- [ ] Sources accordion is collapsed by default
-- [ ] Clicking a source accordion item expands it to show chunk content
+- [x] `type = 'user'` renders the query text without sources section
+- [x] `type = 'assistant'` renders the answer text
+- [x] `type = 'assistant'` with sources renders the "Sources" accordion
+- [x] `isLoading = true` renders `TypingIndicator` instead of answer text
+- [x] Sources accordion is collapsed by default
+- [x] Clicking a source accordion item expands it to show chunk content
 
 **Component tests — `SourceCitation`** (`frontend/src/components/rag/SourceCitation.test.tsx`):
-- [ ] Renders document title and similarity percentage
-- [ ] Content is hidden (accordion collapsed) on initial render
-- [ ] Clicking the item expands and shows raw chunk content
-- [ ] Clicking again collapses the item
+- [x] Renders document title and similarity percentage
+- [x] Content is hidden (accordion collapsed) on initial render
+- [x] Clicking the item expands and shows raw chunk content
+- [x] Clicking again collapses the item
 
 **Component tests — `TypingIndicator`** (`frontend/src/components/rag/TypingIndicator.test.tsx`):
-- [ ] Renders three animated dot elements
-- [ ] Has accessible `aria-label` describing loading state
+- [x] Renders three animated dot elements
+- [x] Has accessible `aria-label` describing loading state
 
 **Route smoke tests** (`frontend/src/__tests__/routes/rag.test.tsx`) — mock all API calls:
-- [ ] `/rag` renders without crashing and shows `RAGPipelineVisualizer`
-- [ ] `/rag` stats bar shows document count from mocked `listDocuments` response
-- [ ] `/rag/documents` renders document list and ingest form
-- [ ] `/rag/documents` shows empty state when document list is empty
-- [ ] `/rag/search` renders query input and top-k selector
-- [ ] `/rag/search` shows empty state when no documents exist
-- [ ] `/rag/chat` renders message input and submit button
-- [ ] `/rag/chat` shows empty state prompting user to ingest documents
+- [x] `/rag` renders without crashing and shows `RAGPipelineVisualizer`
+- [x] `/rag` stats bar shows document count from mocked `listDocuments` response
+- [x] `/rag/documents` renders document list and ingest form
+- [x] `/rag/documents` shows empty state when document list is empty
+- [x] `/rag/search` renders query input and top-k selector
+- [x] `/rag/chat` renders message input and submit button
+- [x] `/rag/chat` shows empty state prompting user to ingest documents
 
 ---
 
@@ -804,23 +803,29 @@ frontend/src/
 │   │   └── navItems.ts         DONE ✅ — includes RAG nav group
 │   └── rag/
 │       ├── PipelineStep.tsx                    DONE ✅
-│       ├── PipelineStep.test.tsx               ⏳ MISSING — still needed
+│       ├── PipelineStep.test.tsx               DONE ✅
 │       ├── RAGPipelineVisualizer.tsx           DONE ✅
-│       ├── RAGPipelineVisualizer.test.tsx      ⏳ MISSING — still needed
+│       ├── RAGPipelineVisualizer.test.tsx      DONE ✅
 │       ├── IngestDocumentForm.tsx              DONE ✅
-│       ├── IngestDocumentForm.test.tsx         ⏳ MISSING — still needed
+│       ├── IngestDocumentForm.test.tsx         DONE ✅
 │       ├── DocumentCard.tsx                    DONE ✅
-│       ├── DocumentCard.test.tsx               ⏳ MISSING — still needed
+│       ├── DocumentCard.test.tsx               DONE ✅
 │       ├── DocumentDetail.tsx                  DONE ✅
-│       ├── DocumentDetail.test.tsx             ⏳ MISSING — still needed
+│       ├── DocumentDetail.test.tsx             DONE ✅
 │       ├── SearchResultCard.tsx                DONE ✅
-│       ├── SearchResultCard.test.tsx           ⏳ MISSING — still needed
+│       ├── SearchResultCard.test.tsx           DONE ✅
 │       ├── ChatMessage.tsx                     DONE ✅
-│       ├── ChatMessage.test.tsx                ⏳ MISSING — still needed
+│       ├── ChatMessage.test.tsx                DONE ✅
 │       ├── SourceCitation.tsx                  DONE ✅
-│       ├── SourceCitation.test.tsx             ⏳ MISSING — still needed
+│       ├── SourceCitation.test.tsx             DONE ✅
 │       ├── TypingIndicator.tsx                 DONE ✅
-│       └── TypingIndicator.test.tsx            ⏳ MISSING — still needed
+│       ├── TypingIndicator.test.tsx            DONE ✅
+│       ├── ChunkCard.tsx                       DONE ✅ (extra — not in original plan)
+│       ├── ChunkCard.test.tsx                  DONE ✅
+│       ├── ChunkList.tsx                       DONE ✅ (extra — not in original plan)
+│       ├── ChunkList.test.tsx                  DONE ✅
+│       ├── PDFDropZone.tsx                     DONE ✅ (extra — not in original plan)
+│       └── PDFDropZone.test.tsx                DONE ✅
 ├── routes/
 │   ├── rag.tsx                 DONE ✅ — layout + overview + pipeline visualizer
 │   ├── rag.documents.tsx       DONE ✅ — document manager
@@ -828,7 +833,7 @@ frontend/src/
 │   └── rag.chat.tsx            DONE ✅ — full RAG chat interface
 └── __tests__/
     └── routes/
-        └── rag.test.tsx        ⏳ MISSING — route smoke tests still needed
+        └── rag.test.tsx        DONE ✅
 ```
 
 > Note: `src/components/ui/` has all 12 components installed (textarea, dialog, badge, separator, scroll-area, tabs, tooltip, skeleton, alert, progress, accordion, select) — Phase 3 complete ✅.

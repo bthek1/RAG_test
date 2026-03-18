@@ -41,27 +41,27 @@ The `celery-docker.md` plan is complete: Redis broker, Celery worker (Docker + l
 
 ### Phase 1 — DB-backed Results (`django-celery-results`)
 
-- [ ] Add `django-celery-results` to `pyproject.toml` dependencies:
+- [x] Add `django-celery-results` to `pyproject.toml` dependencies:
   ```
   uv add django-celery-results
   ```
-- [ ] Add `"django_celery_results"` to `INSTALLED_APPS` in `base.py`
-- [ ] Switch `CELERY_RESULT_BACKEND` from `"redis://..."` to `"django-db"` in `base.py`
-- [ ] Add `CELERY_RESULT_EXTENDED = True` to `base.py`
-- [ ] Update `celery_worker` service in `docker-compose.yml`: remove `CELERY_RESULT_BACKEND` env override (worker will use `django-db` via Django settings)
-- [ ] Run `uv run python manage.py migrate` to create `django_celery_results_taskresult` table
-- [ ] Update `.env.example`: remove `CELERY_RESULT_BACKEND` entry (no longer relevant as a URL)
+- [x] Add `"django_celery_results"` to `INSTALLED_APPS` in `base.py`
+- [x] Switch `CELERY_RESULT_BACKEND` from `"redis://..."` to `"django-db"` in `base.py`
+- [x] Add `CELERY_RESULT_EXTENDED = True` to `base.py`
+- [x] Update `celery_worker` service in `docker-compose.yml`: remove `CELERY_RESULT_BACKEND` env override (worker will use `django-db` via Django settings)
+- [x] Run `uv run python manage.py migrate` to create `django_celery_results_taskresult` table
+- [x] Update `.env.example`: remove `CELERY_RESULT_BACKEND` entry (no longer relevant as a URL)
 
 ### Phase 2 — Periodic Task Scheduling (`django-celery-beat`)
 
-- [ ] Add `django-celery-beat` to `pyproject.toml` dependencies:
+- [x] Add `django-celery-beat` to `pyproject.toml` dependencies:
   ```
   uv add django-celery-beat
   ```
-- [ ] Add `"django_celery_beat"` to `INSTALLED_APPS` in `base.py`
-- [ ] Add `CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"` to `base.py`
-- [ ] Run `uv run python manage.py migrate` to create Beat tables
-- [ ] Add `celery_beat` service to `docker-compose.yml`:
+- [x] Add `"django_celery_beat"` to `INSTALLED_APPS` in `base.py`
+- [x] Add `CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"` to `base.py`
+- [x] Run `uv run python manage.py migrate` to create Beat tables
+- [x] Add `celery_beat` service to `docker-compose.yml`:
   ```yaml
   celery_beat:
     build: ./backend
@@ -79,12 +79,12 @@ The `celery-docker.md` plan is complete: Redis broker, Celery worker (Docker + l
       DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb
       CELERY_BROKER_URL: redis://redis:6379/0
   ```
-- [ ] Add `be-beat` justfile recipe — runs Beat locally:
+- [x] Add `be-beat` justfile recipe — runs Beat locally:
   ```just
   be-beat:
       cd backend && uv run celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
   ```
-- [ ] Add `beat-up` justfile recipe:
+- [x] Add `beat-up` justfile recipe:
   ```just
   beat-up:
       docker compose up -d celery_beat
@@ -94,52 +94,52 @@ The `celery-docker.md` plan is complete: Redis broker, Celery worker (Docker + l
 
 Add the following to the `# ── Celery` block in `backend/core/settings/base.py`:
 
-- [ ] `CELERY_TASK_TRACK_STARTED = True` — exposes STARTED state (UI can show "in progress" vs "queued")
-- [ ] `CELERY_TASK_SEND_SENT_EVENT = True` — emits `task-sent` events for Flower
-- [ ] `CELERY_WORKER_SEND_TASK_EVENTS = True` — enables task event stream for monitoring
-- [ ] `CELERY_TASK_ACKS_LATE = True` — task survives worker crash; requeued automatically
-- [ ] `CELERY_WORKER_PREFETCH_MULTIPLIER = 1` — long tasks don't block short ones on the same worker
-- [ ] `CELERY_TASK_SOFT_TIME_LIMIT = 300` — raises `SoftTimeLimitExceeded` after 5 min
-- [ ] `CELERY_TASK_TIME_LIMIT = 360` — hard kill after 6 min
+- [x] `CELERY_TASK_TRACK_STARTED = True` — exposes STARTED state (UI can show "in progress" vs "queued")
+- [x] `CELERY_TASK_SEND_SENT_EVENT = True` — emits `task-sent` events for Flower
+- [x] `CELERY_WORKER_SEND_TASK_EVENTS = True` — enables task event stream for monitoring
+- [x] `CELERY_TASK_ACKS_LATE = True` — task survives worker crash; requeued automatically
+- [x] `CELERY_WORKER_PREFETCH_MULTIPLIER = 1` — long tasks don't block short ones on the same worker
+- [x] `CELERY_TASK_SOFT_TIME_LIMIT = 300` — raises `SoftTimeLimitExceeded` after 5 min
+- [x] `CELERY_TASK_TIME_LIMIT = 360` — hard kill after 6 min
 
 ### Phase 4 — Task Status/Revoke DRF Endpoints
 
 Add task management endpoints to `apps/embeddings/`:
 
-- [ ] Add the following views to `apps/embeddings/views.py`:
+- [x] Add the following views to `apps/embeddings/views.py`:
   - `task_status(request, task_id)` — `GET /api/embeddings/tasks/<task_id>/` — returns `{task_id, status, result, traceback}`
   - `revoke_task(request, task_id)` — `POST /api/embeddings/tasks/<task_id>/revoke/` — calls `AsyncResult(task_id).revoke(terminate=True)`
-- [ ] Wire up new URL patterns in `apps/embeddings/urls.py`
-- [ ] Add `IsAuthenticated` permission to both views
-- [ ] Update `docs/standards/api-contracts.md` with the new endpoints
+- [x] Wire up new URL patterns in `apps/embeddings/urls.py`
+- [x] Add `IsAuthenticated` permission to both views
+- [x] Update `docs/standards/api-contracts.md` with the new endpoints
 
 ### Phase 5 — Frontend Task Polling Hook + Component
 
-- [ ] Create `frontend/src/hooks/useTaskPoller.ts`:
+- [x] Create `frontend/src/hooks/useTaskPoller.ts`:
   - `useTaskPoller<T>(taskId: string | null, intervalMs?: number): TaskResult<T> | null`
   - Polls `GET /api/embeddings/tasks/<taskId>/` every `intervalMs` ms (default 2000)
   - Stops polling automatically on `SUCCESS`, `FAILURE`, or `REVOKED`
   - Cleans up the interval on unmount
   - Uses the `@/api/client` Axios instance (JWT auth), not raw `fetch`
-- [ ] Add `TaskStatus` and `TaskResult` TypeScript types to `frontend/src/types/tasks.ts`
-- [ ] Add query key `queryKeys.tasks.detail(id)` to `frontend/src/api/queryKeys.ts`
-- [ ] Create `frontend/src/components/TaskStatusBadge.tsx`:
+- [x] Add `TaskStatus` and `TaskResult` TypeScript types to `frontend/src/types/tasks.ts`
+- [x] Add query key `queryKeys.tasks.detail(id)` to `frontend/src/api/queryKeys.ts`
+- [x] Create `frontend/src/components/TaskStatusBadge.tsx`:
   - Renders a status badge (`PENDING`, `STARTED`, `SUCCESS`, `FAILURE`, `REVOKED`) with appropriate colour
   - Uses `cn()` + Tailwind CSS for styling
   - Uses shadcn/ui `Badge` component
-- [ ] Write `frontend/src/hooks/useTaskPoller.test.ts` — unit tests covering:
+- [x] Write `frontend/src/hooks/useTaskPoller.test.ts` — unit tests covering:
   - Starts polling when `taskId` is set
   - Stops polling on terminal status
   - Cleans up interval on unmount
-- [ ] Write `frontend/src/components/TaskStatusBadge.test.tsx`
+- [x] Write `frontend/src/components/TaskStatusBadge.test.tsx`
 
 ### Phase 6 — Flower Monitoring
 
-- [ ] Add `flower` to `pyproject.toml` dev dependencies:
+- [x] Add `flower` to `pyproject.toml` dev dependencies:
   ```
   uv add --dev flower
   ```
-- [ ] Add `flower` service to `docker-compose.yml`:
+- [x] Add `flower` service to `docker-compose.yml`:
   ```yaml
   flower:
     build: ./backend
@@ -151,33 +151,33 @@ Add task management endpoints to `apps/embeddings/`:
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
   ```
-- [ ] Add `be-flower` justfile recipe — runs Flower locally:
+- [x] Add `be-flower` justfile recipe — runs Flower locally:
   ```just
   be-flower:
       cd backend && uv run celery -A core flower --port=5555
   ```
-- [ ] Add `flower-up` justfile recipe:
+- [x] Add `flower-up` justfile recipe:
   ```just
   flower-up:
       docker compose up -d flower
   ```
-- [ ] Document Flower URL (`http://localhost:5555`) in `docs/guides/local-setup.md`
+- [x] Document Flower URL (`http://localhost:5555`) in `docs/guides/local-setup.md`
 
 ### Phase 7 — Enhanced pytest-celery Test Suite
 
-- [ ] Add `pytest-celery` to `pyproject.toml` dev dependencies:
+- [x] Add `pytest-celery` to `pyproject.toml` dev dependencies:
   ```
   uv add --dev pytest-celery
   ```
-- [ ] Add `celery_config` fixture to `backend/conftest.py` (or `apps/embeddings/tests/conftest.py`) returning in-memory broker/backend config
-- [ ] Add `eager_celery` shared fixture to `apps/embeddings/tests/conftest.py`
-- [ ] Extend `apps/embeddings/tests/test_tasks.py` with:
+- [x] Add `celery_config` fixture to `backend/conftest.py` (or `apps/embeddings/tests/conftest.py`) returning in-memory broker/backend config
+- [x] Add `eager_celery` shared fixture to `apps/embeddings/tests/conftest.py`
+- [x] Extend `apps/embeddings/tests/test_tasks.py` with:
   - **Mode 2 tests** (`@pytest.mark.celery` + `celery_worker` fixture) for async state transitions and retry behaviour — marked `@pytest.mark.integration`
   - **Mock tests** verifying `.delay()` is called with correct args when a view dispatches a task (complement `test_views.py`)
-- [ ] Add `apps/embeddings/tests/test_beat.py`:
+- [x] Add `apps/embeddings/tests/test_beat.py`:
   - Test that periodic tasks can be registered via `PeriodicTask` model
   - Marked `@pytest.mark.django_db`
-- [ ] Verify `CELERY_TASK_ALWAYS_EAGER = True` is set in `core/settings/test.py` (already done per `celery-docker.md` plan — confirm and add `CELERY_TASK_EAGER_PROPAGATES = True` if missing)
+- [x] Verify `CELERY_TASK_ALWAYS_EAGER = True` is set in `core/settings/test.py` (already done per `celery-docker.md` plan — confirm and add `CELERY_TASK_EAGER_PROPAGATES = True` if missing)
 
 ---
 

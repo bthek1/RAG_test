@@ -18,6 +18,12 @@ media
 # Virtual environment
 .venv
 
+# Local model storage (HuggingFace downloads, etc.)
+# Ignore all files but allow directory structure and .gitkeep sentinels
+models/**
+!models/**/
+!models/**/.gitkeep
+
 
 # Screencast
 Lithium_Demo_2025.mp4

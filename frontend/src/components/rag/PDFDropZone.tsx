@@ -91,6 +91,11 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
     if (next.length === 0) setClientError(null);
   }
 
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(true);
@@ -98,6 +103,8 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
 
   function handleDragLeave(e: React.DragEvent) {
     e.preventDefault();
+    // Ignore leave events when moving to a child element inside the drop zone
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setIsDragging(false);
   }
 
@@ -125,6 +132,7 @@ export function PDFDropZone({ value, onChange, error }: PDFDropZoneProps) {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
         }}
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}

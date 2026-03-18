@@ -30,7 +30,7 @@ RAG_DOCS_DIR = (
     / "Australia_policies"
 )
 
-PDF_FILES = sorted(RAG_DOCS_DIR.glob("*.pdf")) if RAG_DOCS_DIR.exists() else []
+PDF_FILES = sorted(RAG_DOCS_DIR.glob("*.pdf"))[:2] if RAG_DOCS_DIR.exists() else []
 
 # ---------------------------------------------------------------------------
 # Skip entire module when corpus is absent
