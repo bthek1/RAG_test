@@ -188,7 +188,7 @@ describe("/rag/documents route smoke tests", () => {
     vi.mocked(useDocuments).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useDocuments>);
+    } as unknown as ReturnType<typeof useDocuments>);
 
     if (!DocumentsComponent) return;
     render(<DocumentsComponent />, { wrapper });

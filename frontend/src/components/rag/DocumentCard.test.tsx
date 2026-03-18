@@ -10,6 +10,7 @@ function makeDoc(overrides: Partial<DocumentListItem> = {}): DocumentListItem {
     title: "My Test Document",
     source: "https://example.com/doc",
     created_at: "2026-01-15T10:00:00Z",
+    updated_at: "2026-01-15T10:00:00Z",
     chunk_count: 7,
     ...overrides,
   };
@@ -18,11 +19,7 @@ function makeDoc(overrides: Partial<DocumentListItem> = {}): DocumentListItem {
 describe("DocumentCard", () => {
   it("renders title, source, chunk count badge, and created_at", () => {
     render(
-      <DocumentCard
-        doc={makeDoc()}
-        onSelect={vi.fn()}
-        onDelete={vi.fn()}
-      />,
+      <DocumentCard doc={makeDoc()} onSelect={vi.fn()} onDelete={vi.fn()} />,
     );
     expect(screen.getByText("My Test Document")).toBeInTheDocument();
     expect(screen.getByText("https://example.com/doc")).toBeInTheDocument();
@@ -48,9 +45,7 @@ describe("DocumentCard", () => {
     const doc = makeDoc();
     // @ts-expect-error testing missing source
     delete doc.source;
-    render(
-      <DocumentCard doc={doc} onSelect={vi.fn()} onDelete={vi.fn()} />,
-    );
+    render(<DocumentCard doc={doc} onSelect={vi.fn()} onDelete={vi.fn()} />);
     expect(
       screen.queryByText("https://example.com/doc"),
     ).not.toBeInTheDocument();
@@ -60,14 +55,12 @@ describe("DocumentCard", () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     render(
-      <DocumentCard
-        doc={makeDoc()}
-        onSelect={onSelect}
-        onDelete={vi.fn()}
-      />,
+      <DocumentCard doc={makeDoc()} onSelect={onSelect} onDelete={vi.fn()} />,
     );
     await user.click(screen.getByText("My Test Document"));
-    expect(onSelect).toHaveBeenCalledWith("aaaaaaaa-0000-0000-0000-000000000001");
+    expect(onSelect).toHaveBeenCalledWith(
+      "aaaaaaaa-0000-0000-0000-000000000001",
+    );
   });
 
   it("clicking the delete button fires onDelete with the doc id and does not fire onSelect", async () => {
@@ -79,7 +72,9 @@ describe("DocumentCard", () => {
     );
     const deleteBtn = screen.getByRole("button");
     await user.click(deleteBtn);
-    expect(onDelete).toHaveBeenCalledWith("aaaaaaaa-0000-0000-0000-000000000001");
+    expect(onDelete).toHaveBeenCalledWith(
+      "aaaaaaaa-0000-0000-0000-000000000001",
+    );
     expect(onSelect).not.toHaveBeenCalled();
   });
 

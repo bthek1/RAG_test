@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { Accordion } from "@/components/ui/accordion";
 import { ChatMessage, type ChatMessageData } from "./ChatMessage";
 import type { RAGSource } from "@/types/embeddings";
 

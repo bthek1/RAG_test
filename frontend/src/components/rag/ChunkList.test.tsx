@@ -88,7 +88,7 @@ describe("ChunkList", () => {
       isLoading: false,
       isError: false,
       data: [],
-    } as ReturnType<typeof useChunks>);
+    } as unknown as ReturnType<typeof useChunks>);
 
     render(<ChunkList documentId="doc-1" />, { wrapper });
 
