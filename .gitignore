@@ -17,9 +17,9 @@ media
 
 # Virtual environment
 .venv
+.env
 
 # Local model storage (HuggingFace downloads, etc.)
-# Ignore all files but allow directory structure and .gitkeep sentinels
 models/**
 !models/**/
 !models/**/.gitkeep
