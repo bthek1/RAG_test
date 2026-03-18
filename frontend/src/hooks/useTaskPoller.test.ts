@@ -15,7 +15,9 @@ const mockGet = vi.mocked(apiClient.get);
 
 describe("useTaskPoller", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "setInterval", "clearTimeout", "clearInterval"],
+    });
     mockGet.mockReset();
   });
 
@@ -30,7 +32,12 @@ describe("useTaskPoller", () => {
 
   it("starts polling when taskId is provided", async () => {
     mockGet.mockResolvedValue({
-      data: { task_id: "abc", status: "PENDING", result: null, traceback: null },
+      data: {
+        task_id: "abc",
+        status: "PENDING",
+        result: null,
+        traceback: null,
+      },
     });
 
     const { result } = renderHook(() => useTaskPoller("abc", 1000));
@@ -46,7 +53,12 @@ describe("useTaskPoller", () => {
 
   it("polls again after the interval", async () => {
     mockGet.mockResolvedValue({
-      data: { task_id: "abc", status: "STARTED", result: null, traceback: null },
+      data: {
+        task_id: "abc",
+        status: "STARTED",
+        result: null,
+        traceback: null,
+      },
     });
 
     renderHook(() => useTaskPoller("abc", 1000));
@@ -67,7 +79,12 @@ describe("useTaskPoller", () => {
 
   it("stops polling on SUCCESS status", async () => {
     mockGet.mockResolvedValue({
-      data: { task_id: "abc", status: "SUCCESS", result: { chunk_count: 5 }, traceback: null },
+      data: {
+        task_id: "abc",
+        status: "SUCCESS",
+        result: { chunk_count: 5 },
+        traceback: null,
+      },
     });
 
     const { result } = renderHook(() => useTaskPoller("abc", 1000));
@@ -89,7 +106,12 @@ describe("useTaskPoller", () => {
 
   it("stops polling on FAILURE status", async () => {
     mockGet.mockResolvedValue({
-      data: { task_id: "abc", status: "FAILURE", result: null, traceback: "Error" },
+      data: {
+        task_id: "abc",
+        status: "FAILURE",
+        result: null,
+        traceback: "Error",
+      },
     });
 
     renderHook(() => useTaskPoller("abc", 1000));
@@ -108,7 +130,12 @@ describe("useTaskPoller", () => {
 
   it("stops polling on REVOKED status", async () => {
     mockGet.mockResolvedValue({
-      data: { task_id: "abc", status: "REVOKED", result: null, traceback: null },
+      data: {
+        task_id: "abc",
+        status: "REVOKED",
+        result: null,
+        traceback: null,
+      },
     });
 
     renderHook(() => useTaskPoller("abc", 1000));
@@ -127,7 +154,12 @@ describe("useTaskPoller", () => {
 
   it("cleans up interval on unmount", async () => {
     mockGet.mockResolvedValue({
-      data: { task_id: "abc", status: "STARTED", result: null, traceback: null },
+      data: {
+        task_id: "abc",
+        status: "STARTED",
+        result: null,
+        traceback: null,
+      },
     });
 
     const { unmount } = renderHook(() => useTaskPoller("abc", 1000));
@@ -151,7 +183,12 @@ describe("useTaskPoller", () => {
     mockGet
       .mockRejectedValueOnce(new axios.AxiosError("Network error"))
       .mockResolvedValue({
-        data: { task_id: "abc", status: "PENDING", result: null, traceback: null },
+        data: {
+          task_id: "abc",
+          status: "PENDING",
+          result: null,
+          traceback: null,
+        },
       });
 
     const { result } = renderHook(() => useTaskPoller("abc", 1000));
