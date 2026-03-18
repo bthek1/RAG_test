@@ -62,7 +62,7 @@ def extract_text_from_txt(file_bytes: bytes) -> str:
 
 def extract_text_from_html(file_bytes: bytes) -> str:
     """Strip HTML tags and return visible text."""
-    from bs4 import BeautifulSoup  # noqa: PLC0415
+    from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(file_bytes, "lxml")
     for tag in soup(["script", "style", "nav", "footer", "head"]):
@@ -81,7 +81,7 @@ def extract_text_from_html(file_bytes: bytes) -> str:
 
 def extract_text_from_docx(file_bytes: bytes) -> str:
     """Extract text from a .docx Word document, preserving paragraph order."""
-    from docx import Document as DocxDocument  # noqa: PLC0415
+    from docx import Document as DocxDocument
 
     doc = DocxDocument(io.BytesIO(file_bytes))
     paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
@@ -93,7 +93,7 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 
 def extract_text_from_pptx(file_bytes: bytes) -> str:
     """Extract text from all slides in a .pptx file, one slide per block."""
-    from pptx import Presentation  # noqa: PLC0415
+    from pptx import Presentation
 
     prs = Presentation(io.BytesIO(file_bytes))
     slides = []
@@ -120,7 +120,7 @@ def extract_text_from_pptx(file_bytes: bytes) -> str:
 
 def extract_text_from_csv(file_bytes: bytes, delimiter: str = ",") -> str:
     """Convert CSV/TSV rows to 'key: value' line blocks, one block per row."""
-    import csv  # noqa: PLC0415
+    import csv
 
     reader = csv.DictReader(
         io.StringIO(file_bytes.decode("utf-8", errors="replace")),
@@ -139,7 +139,7 @@ def extract_text_from_csv(file_bytes: bytes, delimiter: str = ",") -> str:
 
 def extract_text_from_json(file_bytes: bytes) -> str:
     """Recursively flatten JSON/JSONL into key: value text blocks."""
-    import json  # noqa: PLC0415
+    import json
 
     def _flatten(obj: object, prefix: str = "") -> list[str]:
         lines: list[str] = []
@@ -177,7 +177,7 @@ def extract_text_from_json(file_bytes: bytes) -> str:
 
 def extract_text_from_xlsx(file_bytes: bytes) -> str:
     """Convert each sheet of an Excel workbook to row blocks."""
-    import openpyxl  # noqa: PLC0415
+    import openpyxl
 
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
     sheets = []

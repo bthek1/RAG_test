@@ -88,7 +88,7 @@ class TestPdfExtraction:
         for pdf_path in PDF_FILES:
             try:
                 extract_text_from_pdf(pdf_path.read_bytes())
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 failures.append(f"{pdf_path.name}: {exc}")
         assert not failures, "Extraction failed for:\n" + "\n".join(failures)
 

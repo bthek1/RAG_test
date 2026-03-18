@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PDFDropZone } from "./PDFDropZone";
 
-function makeFile(name = "test.pdf", sizeBytes = 1024, type = "application/pdf"): File {
+function makeFile(
+  name = "test.pdf",
+  sizeBytes = 1024,
+  type = "application/pdf",
+): File {
   return new File([new Uint8Array(sizeBytes)], name, { type });
 }
 
@@ -40,14 +44,20 @@ describe("PDFDropZone — file list", () => {
     const file = makeFile("report.pdf", 2048);
     render(<PDFDropZone value={[file]} onChange={vi.fn()} />);
     expect(screen.getByText("report.pdf")).toBeInTheDocument();
-    expect(screen.getByText(/PDF/)).toBeInTheDocument();
     expect(screen.getByText(/2\.0 KB/)).toBeInTheDocument();
+    // The badge span contains "PDF ·" — use getAllByText to handle the help-text dupe
+    const pdfs = screen.getAllByText(/\bPDF\b/);
+    expect(pdfs.length).toBeGreaterThan(0);
   });
 
   it("renders one list entry per file for multiple files", () => {
     const files = [
       makeFile("a.pdf"),
-      makeFile("b.docx", 512, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+      makeFile(
+        "b.docx",
+        512,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ),
       makeFile("c.csv", 256, "text/csv"),
     ];
     render(<PDFDropZone value={files} onChange={vi.fn()} />);
@@ -85,7 +95,9 @@ describe("PDFDropZone — removing files", () => {
     const file = makeFile("solo.pdf");
     render(<PDFDropZone value={[file]} onChange={onChange} />);
 
-    await userEvent.click(screen.getByRole("button", { name: /remove solo\.pdf/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /remove solo\.pdf/i }),
+    );
     expect(onChange).toHaveBeenCalledWith([]);
   });
 });
@@ -100,7 +112,8 @@ describe("PDFDropZone — drag-and-drop", () => {
     const dropped = makeFile("new.pdf");
     render(<PDFDropZone value={[existing]} onChange={onChange} />);
 
-    fireEvent.drop(screen.getByRole("button"), {
+    // Use the labelled drop zone to avoid ambiguity with per-file remove buttons
+    fireEvent.drop(screen.getByRole("button", { name: /upload documents/i }), {
       dataTransfer: { files: [dropped] },
     });
 
@@ -124,7 +137,9 @@ describe("PDFDropZone — drag-and-drop", () => {
     const onChange = vi.fn();
     render(<PDFDropZone value={[]} onChange={onChange} />);
 
-    const badFile = new File(["data"], "archive.zip", { type: "application/zip" });
+    const badFile = new File(["data"], "archive.zip", {
+      type: "application/zip",
+    });
     fireEvent.drop(screen.getByRole("button"), {
       dataTransfer: { files: [badFile] },
     });
@@ -136,7 +151,9 @@ describe("PDFDropZone — drag-and-drop", () => {
   it("adds valid files and shows error even if a mixed drop contains an unsupported file", () => {
     const onChange = vi.fn();
     const good = makeFile("ok.pdf");
-    const bad = new File(["data"], "bad.exe", { type: "application/octet-stream" });
+    const bad = new File(["data"], "bad.exe", {
+      type: "application/octet-stream",
+    });
     render(<PDFDropZone value={[]} onChange={onChange} />);
 
     fireEvent.drop(screen.getByRole("button"), {

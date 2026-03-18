@@ -20,8 +20,8 @@ vectors, which produce NaN distances that the index cannot sort.
 
 from __future__ import annotations
 
-import random
 import math
+import random
 from pathlib import Path
 
 import pytest

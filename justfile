@@ -98,10 +98,17 @@ be-lint:
 be-fmt:
     cd backend && uv run ruff format .
 
-# Create a new Django app: just be-startapp myapp
-be-startapp name:
-    mkdir -p backend/apps/{{ name }}
-    cd backend && uv run python manage.py startapp {{ name }} apps/{{ name }}
+# Run the Celery worker locally (expects Redis at localhost:6379)
+be-celery:
+    cd backend && uv run celery -A core worker --loglevel=info
+
+# Purge all queued Celery tasks
+be-celery-purge:
+    cd backend && uv run celery -A core purge -f
+
+# Start the Celery worker container via Docker Compose
+celery-up:
+    docker compose up -d celery_worker
 
 # ── Frontend ───────────────────────────────────────────────────────────────────
 
@@ -138,18 +145,22 @@ fe-test-ui:
 # Install all dependencies (backend + frontend)
 install: be-install fe-install
 
-# Start the db container if not already running
+# Start the db and redis containers if not already running
 db-up:
     @docker compose ps --status running db | grep -q db \
         && echo "DB already running." \
         || (echo "Starting DB..." && docker compose up -d db && echo "Waiting for DB to be ready..." && sleep 3)
+    @docker compose ps --status running redis | grep -q redis \
+        && echo "Redis already running." \
+        || (echo "Starting Redis..." && docker compose up -d redis)
 
 # Run backend and frontend dev servers concurrently (uses overmind if available)
 dev: db-up
     #!/usr/bin/env bash
-    echo "Starting backend and frontend dev servers..."
+    echo "Starting backend, frontend, and Celery dev servers..."
     echo "  Backend : http://localhost:8004"
     echo "  Frontend: http://localhost:5174"
+    echo "  Celery  : worker (broker: redis://localhost:6379/0)"
     _pids=()
     _cleanup() {
         echo ""
@@ -163,6 +174,8 @@ dev: db-up
         just be-dev &
         _pids+=($!)
         just fe-dev &
+        _pids+=($!)
+        just be-celery &
         _pids+=($!)
         wait "${_pids[@]}"
     fi

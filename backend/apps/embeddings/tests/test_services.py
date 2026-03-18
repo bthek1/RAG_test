@@ -293,6 +293,7 @@ class TestExtractTextFromDocx:
     def _make_docx_bytes(self, paragraphs: list[str]) -> bytes:
         """Create a minimal in-memory DOCX with the given paragraphs."""
         import io
+
         from docx import Document
 
         doc = Document()
@@ -327,6 +328,7 @@ class TestExtractTextFromPptx:
     def _make_pptx_bytes(self, slides: list[list[str]]) -> bytes:
         """Create a minimal in-memory PPTX with given slides (list of text items)."""
         import io
+
         from pptx import Presentation
         from pptx.util import Inches
 
@@ -432,6 +434,7 @@ class TestExtractTextFromJson:
 class TestExtractTextFromXlsx:
     def _make_xlsx_bytes(self, rows: list[list[str]], sheet_name: str = "Sheet1") -> bytes:
         import io
+
         import openpyxl
 
         wb = openpyxl.Workbook()

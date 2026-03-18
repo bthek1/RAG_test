@@ -68,11 +68,12 @@ class DocumentSerializer(serializers.ModelSerializer):
             "title",
             "source",
             "content",
+            "status",
             "created_at",
             "updated_at",
             "chunk_count",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "status", "created_at", "updated_at"]
 
 
 class DocumentListSerializer(serializers.ModelSerializer):
@@ -82,8 +83,27 @@ class DocumentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ["id", "title", "source", "created_at", "updated_at", "chunk_count"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "source",
+            "status",
+            "created_at",
+            "updated_at",
+            "chunk_count",
+        ]
+        read_only_fields = ["id", "status", "created_at", "updated_at"]
+
+
+class DocumentStatusSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for the document status endpoint."""
+
+    chunk_count = serializers.IntegerField(read_only=True, required=False)
+
+    class Meta:
+        model = Document
+        fields = ["id", "status", "chunk_count"]
+        read_only_fields = ["id", "status"]
 
 
 class SimilaritySearchSerializer(serializers.Serializer):

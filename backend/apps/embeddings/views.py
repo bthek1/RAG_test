@@ -7,13 +7,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import services
+from . import services, tasks
 from .models import Chunk, Document
 from .serializers import (
     ChunkSerializer,
     DocumentIngestSerializer,
     DocumentListSerializer,
     DocumentSerializer,
+    DocumentStatusSerializer,
     RAGRequestSerializer,
     RAGResponseSerializer,
     SimilaritySearchSerializer,
@@ -50,21 +51,20 @@ class DocumentListCreateView(generics.ListCreateAPIView):
         else:
             content = data["content"]
 
-        services.ingest_document(
+        document = Document.objects.create(
             title=data["title"],
             content=content,
             source=data.get("source", ""),
         )
+        tasks.ingest_document.delay(str(document.pk))
+        self._created_document = document
 
     def create(self, request: Request, *_args, **_kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        # Re-query to include chunk_count
-        document = (
-            Document.objects.annotate(chunk_count=Count("chunks"))
-            .order_by("-created_at")
-            .first()
+        document = Document.objects.annotate(chunk_count=Count("chunks")).get(
+            pk=self._created_document.pk
         )
         out = DocumentSerializer(document)
         return Response(out.data, status=status.HTTP_201_CREATED)
@@ -145,4 +145,18 @@ class RAGView(APIView):
         ]
 
         out = RAGResponseSerializer({"answer": answer, "sources": sources})
+        return Response(out.data)
+
+
+class DocumentStatusView(APIView):
+    """GET /api/embeddings/documents/{id}/status/ — get document processing status."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, _request: Request, id) -> Response:
+        document = get_object_or_404(
+            Document.objects.annotate(chunk_count=Count("chunks")),
+            id=id,
+        )
+        out = DocumentStatusSerializer(document)
         return Response(out.data)

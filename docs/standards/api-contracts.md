@@ -151,7 +151,7 @@ All endpoints under `/api/embeddings/` require a Bearer JWT token.
 
 ### `POST /api/embeddings/documents/`
 
-Ingest a new document — triggers chunking and local embedding. All chunk vectors are stored in Postgres via pgvector.
+Ingest a new document — creates the Document record immediately and enqueues chunking and embedding as a background Celery task. Returns `201` with `status: "pending"` before the task completes.
 
 Two variants are supported (mutually exclusive):
 
@@ -180,11 +180,14 @@ The backend extracts plain text from the PDF using `pypdf` and then runs the sam
   "title": "My Document",
   "source": "https://example.com/doc",
   "content": "Full text...",
+  "status": "pending",
   "created_at": "2026-03-15T00:00:00Z",
   "updated_at": "2026-03-15T00:00:00Z",
-  "chunk_count": 4
+  "chunk_count": 0
 }
 ```
+
+`status` transitions: `pending → processing → done` (or `failed` on error). Poll `GET /api/embeddings/documents/{id}/status/` to track progress.
 
 **Errors:**
 - `400` — validation error (missing both `content` and `file`, both provided, file too large, non-PDF file, image-only PDF with no extractable text)
@@ -203,6 +206,7 @@ List all ingested documents (without the full content body).
     "id": "<uuid>",
     "title": "My Document",
     "source": "https://example.com/doc",
+    "status": "done",
     "created_at": "2026-03-15T00:00:00Z",
     "updated_at": "2026-03-15T00:00:00Z",
     "chunk_count": 4
@@ -214,9 +218,28 @@ List all ingested documents (without the full content body).
 
 ### `GET /api/embeddings/documents/{id}/`
 
-Retrieve a single document including full content and chunk count.
+Retrieve a single document including full content, status, and chunk count.
 
-**Response `200`:** Same shape as `POST` response above.
+**Response `200`:** Same shape as `POST` response above (includes `status`).
+
+**Errors:** `401`, `404`
+
+---
+
+### `GET /api/embeddings/documents/{id}/status/`
+
+Poll the background processing status of a document.
+
+**Response `200`:**
+```json
+{
+  "id": "<uuid>",
+  "status": "processing",
+  "chunk_count": 0
+}
+```
+
+Possible `status` values: `pending`, `processing`, `done`, `failed`.
 
 **Errors:** `401`, `404`
 
