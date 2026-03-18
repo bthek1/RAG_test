@@ -4,6 +4,11 @@ import { LogOut, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -11,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { useUIStore } from "@/store/ui";
 import { useMe, useLogout } from "@/hooks/useAuth";
+import { useHealth } from "@/hooks/useHealth";
 import { SidebarNav } from "./Sidebar";
 
 export function Navbar() {
@@ -19,6 +25,7 @@ export function Navbar() {
   const { data: me } = useMe();
   const logout = useLogout();
   const navigate = useNavigate();
+  const { isConnected, isPending } = useHealth();
 
   function handleLogout() {
     logout();
@@ -64,6 +71,33 @@ export function Navbar() {
       <span className="hidden text-sm font-semibold md:block">My App</span>
 
       <div className="flex-1" />
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1.5 rounded-md px-2 py-1">
+            <span
+              className={[
+                "h-2 w-2 rounded-full",
+                isPending
+                  ? "bg-yellow-400"
+                  : isConnected
+                    ? "bg-green-500"
+                    : "bg-red-500",
+              ].join(" ")}
+            />
+            <span className="hidden text-xs text-muted-foreground sm:block">
+              {isPending ? "Checking…" : isConnected ? "API connected" : "API offline"}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {isPending
+            ? "Checking backend connection…"
+            : isConnected
+              ? "Backend is reachable"
+              : "Cannot reach the backend — check that the server is running"}
+        </TooltipContent>
+      </Tooltip>
 
       <ThemeToggle />
 

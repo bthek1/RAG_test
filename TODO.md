@@ -1,9 +1,10 @@
 # TODO
 
-- [ ] builder researcher
+- [ ] future_architexture
+- [ ] researchers_info - builder researcher
 
-- [ ] add LLM to a new machine
-
+- [x] add LLM to a new machine
+- [ ] gpu-support-embeddings - use GPU for embedding and vector query
 
 ```
 
