@@ -22,6 +22,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
+    "django_celery_results",
+    "django_celery_beat",
     # Local
     "apps.accounts",
     "apps.pages",
@@ -101,8 +103,21 @@ SIMPLE_JWT = {
 
 # ── Celery ─────────────────────────────────────────────────────────────────────
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_EXTENDED = True
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+
+# Beat scheduler — stores schedules in the database
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Reliability & observability
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_SOFT_TIME_LIMIT = 300  # 5 min — raises SoftTimeLimitExceeded
+CELERY_TASK_TIME_LIMIT = 360  # 6 min — hard kill

@@ -22,3 +22,12 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if "integration" in item.keywords:
             item.add_marker(skip)
+
+
+@pytest.fixture(scope="session")
+def celery_config():
+    """Session-scoped Celery config override for pytest-celery integration tests."""
+    return {
+        "broker_url": "memory://",
+        "result_backend": "cache+memory://",
+    }

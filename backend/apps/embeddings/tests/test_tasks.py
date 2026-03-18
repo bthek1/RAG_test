@@ -266,3 +266,48 @@ class TestTaskDelay:
         """CELERY_TASK_EAGER_PROPAGATES ensures task exceptions are not swallowed."""
         with pytest.raises(Document.DoesNotExist):
             ingest_document.delay("00000000-0000-0000-0000-000000000002")
+
+
+# ---------------------------------------------------------------------------
+# View dispatch — verify .delay() is called with correct args
+# ---------------------------------------------------------------------------
+
+
+class TestViewDispatchesTasks:
+    """Verify that views dispatch the correct tasks with the right arguments.
+
+    Uses ``unittest.mock.patch`` so no real task execution occurs — these tests
+    run without a broker or pgvector and confirm the wiring between the view
+    layer and the task layer.
+    """
+
+    @pytest.mark.django_db
+    def test_document_create_dispatches_ingest(self, db, client):
+        """POST /api/embeddings/documents/ must call ingest_document.delay(doc_id)."""
+        from unittest.mock import patch
+
+        from django.contrib.auth import get_user_model
+        from rest_framework.test import APIClient
+
+        User = get_user_model()
+        user = User.objects.create_user(email="tasktest@example.com", password="pass")
+        api_client = APIClient()
+        api_client.force_authenticate(user=user)
+
+        with patch("apps.embeddings.views.tasks.ingest_document") as mock_task:
+            mock_delay = mock_task.delay
+            mock_delay.return_value = None
+
+            response = api_client.post(
+                "/api/embeddings/documents/",
+                data={"title": "Mock Test Doc", "content": "Some content for test."},
+                format="json",
+            )
+
+        assert response.status_code == 201
+        mock_delay.assert_called_once()
+        called_id = mock_delay.call_args[0][0]
+        # The ID passed to .delay() must be a valid UUID string
+        import uuid
+
+        uuid.UUID(called_id)  # raises if not a valid UUID

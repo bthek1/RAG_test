@@ -6,7 +6,9 @@ from .views import (
     DocumentListCreateView,
     DocumentStatusView,
     RAGView,
+    RevokeTaskView,
     SimilaritySearchView,
+    TaskStatusView,
 )
 
 urlpatterns = [
@@ -24,4 +26,10 @@ urlpatterns = [
     ),
     path("search/", SimilaritySearchView.as_view(), name="similarity-search"),
     path("rag/", RAGView.as_view(), name="rag"),
+    path("tasks/<str:task_id>/", TaskStatusView.as_view(), name="task-status"),
+    path(
+        "tasks/<str:task_id>/revoke/",
+        RevokeTaskView.as_view(),
+        name="task-revoke",
+    ),
 ]

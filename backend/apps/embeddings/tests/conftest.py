@@ -44,3 +44,14 @@ def fake_model(monkeypatch):
     monkeypatch.setattr(
         "apps.embeddings.services.get_embedding_model", lambda: fake_instance
     )
+
+
+@pytest.fixture
+def eager_celery(settings):
+    """Force Celery tasks to run synchronously in the current process.
+
+    Useful in tests that need to control the eager/async boundary explicitly
+    without relying on the global test-settings default.
+    """
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True

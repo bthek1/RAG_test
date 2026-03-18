@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, serializers, status
@@ -160,3 +161,30 @@ class DocumentStatusView(APIView):
         )
         out = DocumentStatusSerializer(document)
         return Response(out.data)
+
+
+class TaskStatusView(APIView):
+    """GET /api/embeddings/tasks/{task_id}/ — retrieve Celery task state."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, _request: Request, task_id: str) -> Response:
+        result = AsyncResult(task_id)
+        return Response(
+            {
+                "task_id": task_id,
+                "status": result.status,
+                "result": result.result if result.successful() else None,
+                "traceback": result.traceback,
+            }
+        )
+
+
+class RevokeTaskView(APIView):
+    """POST /api/embeddings/tasks/{task_id}/revoke/ — revoke a pending/running task."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, _request: Request, task_id: str) -> Response:
+        AsyncResult(task_id).revoke(terminate=True)
+        return Response({"task_id": task_id, "revoked": True})

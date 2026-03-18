@@ -38,8 +38,11 @@ docker compose up
 
 This starts:
 - `db` — PostgreSQL 16 on port `5434` (mapped from container `5432`)
-- `backend` — Django dev server on `http://localhost:8004`
-- `frontend` — Vite dev server on `http://localhost:5174`
+- `redis` — Redis 7 on port `6379`
+- `backend` — Django dev server on `http://localhost:8005`
+- `celery_worker` — Celery worker (connects to Redis)
+- `celery_beat` — Celery Beat periodic task scheduler
+- `frontend` — Vite dev server on `http://localhost:5175`
 
 ### 4. Run database migrations (first time only)
 
@@ -57,9 +60,15 @@ docker compose exec backend python manage.py createsuperuser
 
 ### 6. Verify
 
-- Frontend: [http://localhost:5174](http://localhost:5174)
-- Backend API: [http://localhost:8004/api/health/](http://localhost:8004/api/health/)
-- Django admin: [http://localhost:8004/admin/](http://localhost:8004/admin/)
+- Frontend: [http://localhost:5175](http://localhost:5175)
+- Backend API: [http://localhost:8005/api/health/](http://localhost:8005/api/health/)
+- Django admin: [http://localhost:8005/admin/](http://localhost:8005/admin/)
+- Flower (Celery monitoring): [http://localhost:5555](http://localhost:5555)
+
+To start Flower separately:
+```bash
+just flower-up
+```
 
 ---
 

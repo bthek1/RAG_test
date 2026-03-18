@@ -363,6 +363,50 @@ Full RAG pipeline: embed the query → retrieve top-k chunks via HNSW → genera
 
 ---
 
+### `GET /api/embeddings/tasks/{task_id}/`
+
+Retrieve the current state of a Celery background task (e.g. after document ingestion).
+
+**Auth:** Bearer token required
+
+**Response `200`:**
+```json
+{
+  "task_id": "<celery-task-uuid>",
+  "status": "SUCCESS",
+  "result": { "document_id": "<uuid>", "chunk_count": 12 },
+  "traceback": null
+}
+```
+
+Possible `status` values: `PENDING`, `RECEIVED`, `STARTED`, `SUCCESS`, `FAILURE`, `REVOKED`, `RETRY`.
+
+`result` is only populated when `status` is `SUCCESS`; otherwise `null`. `traceback` contains the error traceback string on `FAILURE`.
+
+**Errors:** `401`
+
+---
+
+### `POST /api/embeddings/tasks/{task_id}/revoke/`
+
+Revoke a pending or running Celery task. Sends a SIGTERM to the worker processing it.
+
+**Auth:** Bearer token required
+
+**Request body:** Empty (no body required)
+
+**Response `200`:**
+```json
+{
+  "task_id": "<celery-task-uuid>",
+  "revoked": true
+}
+```
+
+**Errors:** `401`
+
+---
+
 ## Common HTTP Status Codes
 
 | Code | Meaning |

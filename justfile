@@ -106,9 +106,25 @@ be-celery:
 be-celery-purge:
     cd backend && uv run celery -A core purge -f
 
+# Run the Celery Beat scheduler locally (expects Redis + PostgreSQL)
+be-beat:
+    cd backend && uv run celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Run Flower monitoring dashboard locally (port 5555)
+be-flower:
+    cd backend && uv run celery -A core flower --port=5555
+
 # Start the Celery worker container via Docker Compose
 celery-up:
     docker compose up -d celery_worker
+
+# Start the Celery Beat container via Docker Compose
+beat-up:
+    docker compose up -d celery_beat
+
+# Start the Flower monitoring container via Docker Compose
+flower-up:
+    docker compose up -d flower
 
 # ── Frontend ───────────────────────────────────────────────────────────────────
 

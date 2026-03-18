@@ -35,7 +35,32 @@ services:
     environment:
       DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb
       CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+
+  celery_beat:
+    build: ./backend
+    command: uv run celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./backend:/app
+      - backend_venv:/app/.venv
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DATABASE_URL: postgres://appuser:apppassword@db:5432/appdb
+      CELERY_BROKER_URL: redis://redis:6379/0
+
+  flower:
+    build: ./backend
+    command: uv run celery -A core flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
 
   backend:
     build: ./backend

@@ -2,6 +2,7 @@ pyproject.toml
 apps/__init__.py
 core/__init__.py
 core/asgi.py
+core/celery.py
 core/urls.py
 core/wsgi.py
 django_react_template.egg-info/PKG-INFO

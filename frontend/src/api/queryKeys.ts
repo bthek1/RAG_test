@@ -12,4 +12,7 @@ export const queryKeys = {
         ["embeddings", "documents", id, "chunks"] as const,
     },
   },
+  tasks: {
+    detail: (id: string) => ["tasks", id] as const,
+  },
 } as const;
