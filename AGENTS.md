@@ -19,6 +19,10 @@ This document guides agentic coding systems operating in this monorepo.
 | `just be-migrate` | Apply migrations |
 | `just be-makemigrations [app]` | Create migrations |
 | Type check | `cd backend && uv run mypy .` |
+| `just be-celery` | Start Celery worker locally (requires Redis) |
+| `just be-beat` | Start Celery Beat scheduler locally |
+| `just be-flower` | Start Flower dashboard locally (port 5555) |
+| `just celery-up` | Start celery_worker via Docker Compose |
 
 ### Frontend (React + TypeScript)
 

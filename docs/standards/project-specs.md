@@ -33,8 +33,19 @@ This document consolidates all current technical specifications for the django_r
 | `django-cors-headers` | 4.4+ | CORS support for frontend |
 | `django-environ` | 0.11+ | Environment variable management |
 | `gunicorn` | 23.0+ | Production WSGI server |
-| `psycopg[binary]` | 3.2+ | PostgreSQL adapter |
-
+| `psycopg[binary]` | 3.2+ | PostgreSQL adapter || `pgvector` | 0.3+ | Django ORM bindings for pgvector (HNSW index, VectorField) |
+| `sentence-transformers` | 3.0+ | Local embedding model runner (BAAI/bge-large-en-v1.5) |
+| `anthropic` | 0.25+ | Anthropic Claude SDK (RAG generation) |
+| `pypdf` | 4.0+ | PDF text extraction |
+| `beautifulsoup4` | 4.12+ | HTML text extraction |
+| `lxml` | 5.0+ | HTML parser backend for BeautifulSoup |
+| `python-docx` | 1.1+ | DOCX text extraction |
+| `python-pptx` | 1.0+ | PPTX text extraction |
+| `openpyxl` | 3.1+ | XLSX text extraction |
+| `celery[redis]` | 5.4+ | Async task queue for embedding jobs |
+| `redis` | 5.0+ | Redis client (Celery broker) |
+| `django-celery-results` | 2.6+ | Store Celery task results in Django DB |
+| `django-celery-beat` | 2.9+ | Periodic task scheduler (DB-backed) |
 ### Development Tools
 
 | Tool | Version | Purpose |
@@ -104,8 +115,10 @@ See `backend/pyproject.toml` for full config.
 
 | Service | Port | URL |
 |---------|------|-----|
-| Django dev server | 8004 (Docker), 8000 (local) | http://localhost:8004/api/ |
-| Postgres | 5434 (Docker), 5432 (container) | localhost:5434 |
+| Django dev server | 8005 (Docker), 8004 (local) | http://localhost:8005/api/ (Docker) or http://localhost:8004/api/ (local) |
+| Postgres | 5434 (host), 5432 (container) | localhost:5434 |
+| Redis | 6379 | redis://localhost:6379/0 |
+| Flower (Celery monitor) | 5555 | http://localhost:5555 |
 
 ### File Structure
 
@@ -113,18 +126,27 @@ See `backend/pyproject.toml` for full config.
 backend/
 ├── core/                    # Django project settings
 │   ├── settings/
-│   │   ├── base.py         # Shared config
+│   │   ├── base.py         # Shared config (Celery, JWT, etc.)
 │   │   ├── dev.py          # Dev overrides
 │   │   ├── prod.py         # Production overrides
 │   │   └── test.py         # Test config (SQLite, fast hashing)
+│   ├── celery.py           # Celery app instance
 │   ├── urls.py
 │   ├── wsgi.py
 │   └── asgi.py
 ├── apps/                    # Domain applications
-│   ├── accounts/           # User model, auth
+│   ├── accounts/           # CustomUser model, JWT auth endpoints
 │   │   ├── models.py
 │   │   ├── serializers.py
 │   │   ├── services.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   └── tests/
+│   ├── embeddings/         # RAG pipeline: ingestion, search, generation
+│   │   ├── models.py       # Document, Chunk (with VectorField + HNSW index)
+│   │   ├── serializers.py
+│   │   ├── services.py     # Chunking, embedding, search, Claude generation
+│   │   ├── tasks.py        # Celery tasks: ingest_document, reembed_document
 │   │   ├── views.py
 │   │   ├── urls.py
 │   │   └── tests/
@@ -288,11 +310,15 @@ frontend/
 
 ### Services
 
-| Service | Image | Port | Volume |
-|---------|-------|------|--------|
-| `db` | postgres:16 | 5434:5432 | `postgres_data:/var/lib/postgresql/data` |
-| `backend` | ./backend | 8004:8004 | `./backend:/app`, `.venv:/app/.venv` |
-| `frontend` | ./frontend | 5174:5174 | `./frontend:/app`, `/app/node_modules` |
+| Service | Image | Port | Notes |
+|---------|-------|------|-------|
+| `db` | `pgvector/pgvector:pg16` | 5434:5432 | PostgreSQL 16 with pgvector extension pre-built |
+| `redis` | `redis:7-alpine` | 6379:6379 | Celery broker |
+| `backend` | `./backend` | 8005:8005 | Django dev server |
+| `celery_worker` | `./backend` | — | Celery worker (concurrency=2), shares models volume |
+| `celery_beat` | `./backend` | — | Periodic task scheduler (DB-backed) |
+| `flower` | `./backend` | 5555:5555 | Celery task monitoring dashboard |
+| `frontend` | `./frontend` | 5175:5175 | Vite dev server |
 
 ### Environment Variables
 
@@ -300,12 +326,15 @@ frontend/
 |---------|----------|-------|
 | backend | `DATABASE_URL` | `postgres://appuser:apppassword@db:5432/appdb` |
 | backend | `DJANGO_SETTINGS_MODULE` | `core.settings.dev` |
-| frontend | `VITE_API_BASE_URL` | `http://localhost:8004` |
+| backend | `CELERY_BROKER_URL` | `redis://redis:6379/0` |
+| backend | `HF_HOME` | `/models/huggingface` (shared `models/` volume) |
+| frontend | `VITE_API_BASE_URL` | `http://localhost:8005` |
 
 ### Volumes
 
 - `postgres_data` — Persists database between runs
 - `backend_venv` — Caches Python virtual environment
+- `models/` (host bind mount) — Caches HuggingFace model weights locally, shared by `backend` and `celery_worker`
 
 ---
 
@@ -340,19 +369,31 @@ frontend/
 ### Backend (.env)
 
 ```bash
-# .env.example
-DEBUG=True
+# .env.example — see backend/.env.example for the full reference
+DJANGO_SETTINGS_MODULE=core.settings.dev
 SECRET_KEY=change-me-in-production
 DATABASE_URL=postgres://appuser:apppassword@localhost:5432/appdb
-DJANGO_SETTINGS_MODULE=core.settings.dev
 ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:5174
+
+# Celery (defaults to localhost Redis if unset)
+CELERY_BROKER_URL=redis://localhost:6379/0
+
+# Embeddings — sentence-transformers (no API key required)
+EMBEDDING_MODEL=BAAI/bge-large-en-v1.5
+EMBEDDING_DIMENSIONS=1024
+HF_HOME=../models/huggingface   # repo-local models/ cache
+
+# Anthropic Claude — required only for POST /api/embeddings/rag/
+ANTHROPIC_API_KEY=
+CLAUDE_MODEL=claude-opus-4-5
 ```
 
 ### Frontend (.env)
 
 ```bash
 # .env.example
-VITE_API_BASE_URL=http://localhost:8004
+VITE_API_BASE_URL=http://localhost:8004   # local dev (8005 for Docker)
 ```
 
 ---
@@ -370,7 +411,12 @@ VITE_API_BASE_URL=http://localhost:8004
 | `just be-test-cov` | Run tests with coverage |
 | `just be-migrate` | Apply migrations |
 | `just be-makemigrations` | Create migrations |
-| `just be-type-check` | Run mypy |
+| `just be-celery` | Start Celery worker locally (requires Redis) |
+| `just be-beat` | Start Celery Beat scheduler locally |
+| `just be-flower` | Start Flower dashboard locally (port 5555) |
+| `just celery-up` | Start celery_worker via Docker Compose |
+| `just beat-up` | Start celery_beat via Docker Compose |
+| `just flower-up` | Start Flower via Docker Compose |
 
 ### Frontend
 
@@ -441,10 +487,14 @@ VITE_API_BASE_URL=http://localhost:8004
 - [ ] `DEBUG=False`
 - [ ] `SECRET_KEY` set securely (random, >50 chars)
 - [ ] `ALLOWED_HOSTS` configured for your domain
-- [ ] Database migrations applied
+- [ ] `ANTHROPIC_API_KEY` set (required for RAG endpoint)
+- [ ] `CELERY_BROKER_URL` pointing to production Redis
+- [ ] `HF_HOME` pointing to a persistent volume for model weights
+- [ ] Database migrations applied (including `pgvector` extension)
 - [ ] Static files collected (frontend built)
 - [ ] SSL/TLS certificate obtained (https://)
 - [ ] CORS configured for frontend origin
+- [ ] Celery worker and Beat scheduler deployed
 
 ---
 
