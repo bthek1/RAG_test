@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -76,11 +77,19 @@ describe("GpuStatusIndicator", () => {
     expect(dot?.className).toContain("bg-zinc-400");
   });
 
-  it("tooltip shows device, model name, and VRAM stats for GPU", () => {
+  it("tooltip shows device, model name, and VRAM stats for GPU", async () => {
     mockHook({ gpuStatus: gpuStatus, isAvailable: true });
     render(<GpuStatusIndicator />, { wrapper });
 
-    // Radix always renders tooltip content in a hidden role="tooltip" span accessible to screen readers
+    const trigger = document.querySelector(
+      "[data-slot='tooltip-trigger']",
+    ) as HTMLElement;
+    await userEvent.hover(trigger);
+
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip")).toBeInTheDocument(),
+    );
+
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent(/GPU Available/);
     expect(tooltip).toHaveTextContent(/cuda:0/);
@@ -90,18 +99,36 @@ describe("GpuStatusIndicator", () => {
     expect(tooltip).toHaveTextContent(/VRAM free/);
   });
 
-  it("tooltip omits VRAM section for CPU case", () => {
+  it("tooltip omits VRAM section for CPU case", async () => {
     mockHook({ gpuStatus: cpuStatus, isAvailable: false });
     render(<GpuStatusIndicator />, { wrapper });
+
+    const trigger = document.querySelector(
+      "[data-slot='tooltip-trigger']",
+    ) as HTMLElement;
+    await userEvent.hover(trigger);
+
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip")).toBeInTheDocument(),
+    );
 
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent(/No GPU — Running on CPU/);
     expect(tooltip).not.toHaveTextContent(/VRAM total/);
   });
 
-  it("tooltip shows error message when isError", () => {
+  it("tooltip shows error message when isError", async () => {
     mockHook({ isError: true });
     render(<GpuStatusIndicator />, { wrapper });
+
+    const trigger = document.querySelector(
+      "[data-slot='tooltip-trigger']",
+    ) as HTMLElement;
+    await userEvent.hover(trigger);
+
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip")).toBeInTheDocument(),
+    );
 
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent(/Could not retrieve GPU status/);

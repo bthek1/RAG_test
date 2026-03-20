@@ -1,6 +1,6 @@
 # Plan: GPU Status Indicator in Topbar
 
-**Status:** In Progress
+**Status:** Complete
 **Date:** 2026-03-20
 
 ---
@@ -43,11 +43,11 @@ No GPU/device endpoint exists yet.
 
 ## Phases
 
-### Phase 1 — Backend: GPU status endpoint
+### Phase 1 — Backend: GPU status endpoint ✅
 
 **Goal:** Expose a new `GET /api/gpu-status/` endpoint under the pages app that returns GPU info.
 
-#### 1.1 — Add `get_gpu_status()` service function to `apps/pages/`
+#### 1.1 — Add `get_gpu_status()` service function to `apps/pages/` ✅
 
 Create `apps/pages/services.py`:
 
@@ -127,7 +127,7 @@ def get_gpu_status() -> dict:
     }
 ```
 
-#### 1.2 — Add view to `apps/pages/views.py`
+#### 1.2 — Add view to `apps/pages/views.py` ✅
 
 ```python
 from .services import get_gpu_status
@@ -138,7 +138,7 @@ def gpu_status(request):
     return Response(get_gpu_status())
 ```
 
-#### 1.3 — Register URL in `apps/pages/urls.py`
+#### 1.3 — Register URL in `apps/pages/urls.py` ✅
 
 ```python
 path("gpu-status/", gpu_status, name="gpu-status"),
@@ -174,9 +174,9 @@ New route: `GET /api/gpu-status/`
 
 ---
 
-### Phase 2 — Frontend: types, API function, query key, hook
+### Phase 2 — Frontend: types, API function, query key, hook ✅
 
-#### 2.1 — Add `GpuStatus` type to `src/types/`
+#### 2.1 — Add `GpuStatus` type to `src/types/` ✅
 
 In `src/types/health.ts` (create if not exists) or a new `src/types/gpu.ts`:
 
@@ -192,7 +192,7 @@ export interface GpuStatus {
 }
 ```
 
-#### 2.2 — Add `getGpuStatus()` to `src/api/health.ts`
+#### 2.2 — Add `getGpuStatus()` to `src/api/health.ts` ✅
 
 ```ts
 import type { GpuStatus } from "@/types/gpu";
@@ -203,13 +203,13 @@ export async function getGpuStatus(): Promise<GpuStatus> {
 }
 ```
 
-#### 2.3 — Add query key to `src/api/queryKeys.ts`
+#### 2.3 — Add query key to `src/api/queryKeys.ts` ✅
 
 ```ts
 gpuStatus: ["gpu-status"] as const,
 ```
 
-#### 2.4 — Create `src/hooks/useGpuStatus.ts`
+#### 2.4 — Create `src/hooks/useGpuStatus.ts` ✅
 
 ```ts
 import { useQuery } from "@tanstack/react-query";
@@ -236,7 +236,7 @@ export function useGpuStatus() {
 
 ---
 
-### Phase 3 — Frontend: `GpuStatusIndicator` component
+### Phase 3 — Frontend: `GpuStatusIndicator` component ✅
 
 Create `src/components/layout/GpuStatusIndicator.tsx`:
 
@@ -319,7 +319,7 @@ export function GpuStatusIndicator() {
 
 ---
 
-### Phase 4 — Wire `GpuStatusIndicator` into `Navbar.tsx`
+### Phase 4 — Wire `GpuStatusIndicator` into `Navbar.tsx` ✅
 
 In `src/components/layout/Navbar.tsx`, import and place `<GpuStatusIndicator />` in the status area next to the existing API indicator:
 
@@ -334,27 +334,34 @@ The two indicators sit visually adjacent, giving the operator a quick overview o
 
 ---
 
-## Testing
+## Testing ✅
 
-### Backend unit tests
+### Backend unit tests — `backend/apps/pages/tests.py` (10 tests, all passing)
 
-- `get_gpu_status()` returns `available: False` when `torch` is not importable (monkeypatch `builtins.__import__`).
-- `get_gpu_status()` returns `available: True` with CUDA fields populated when `torch.cuda.is_available()` is monkeypatched to `True`.
-- `get_gpu_status()` returns MPS fields when CUDA is not available but `torch.backends.mps.is_available()` is `True`.
-- `GET /api/gpu-status/` returns HTTP 200 with correct shape (no auth required).
-- Response shape includes all required keys: `available`, `device`, `device_name`, `vram_total_mb`, `vram_used_mb`, `vram_free_mb`, `embedding_model`.
+- ✅ `get_gpu_status()` returns `available: False` when `torch` is not importable (monkeypatch `builtins.__import__`).
+- ✅ `get_gpu_status()` returns `available: True` with CUDA fields populated when `torch.cuda.is_available()` is monkeypatched to `True`.
+- ✅ `get_gpu_status()` returns MPS fields when CUDA is not available but `torch.backends.mps.is_available()` is `True`.
+- ✅ `GET /api/gpu-status/` returns HTTP 200 with correct shape (no auth required).
+- ✅ Response shape includes all required keys: `available`, `device`, `device_name`, `vram_total_mb`, `vram_used_mb`, `vram_free_mb`, `embedding_model`.
 
-### Frontend unit tests
+### Frontend unit tests — all passing (11 tests across 2 files)
 
-- `useGpuStatus()` hook: `isAvailable` is `false` when `data.available` is `false`.
-- `useGpuStatus()` hook: `isAvailable` is `true` when `data.available` is `true`.
-- `GpuStatusIndicator` renders green dot + "GPU active" label when `available: true`.
-- `GpuStatusIndicator` renders grey dot + "CPU only" label when `available: false`.
-- `GpuStatusIndicator` renders yellow dot + "Checking…" when `isPending`.
-- `GpuStatusIndicator` renders red dot + "GPU unknown" when `isError`.
-- Tooltip content includes device, model name, and VRAM stats (for GPU case).
-- Tooltip content omits VRAM section for CPU case.
-- Mock `getGpuStatus` at module level — no real HTTP calls.
+**`src/hooks/useGpuStatus.test.tsx` (4 tests):**
+- ✅ `isAvailable` is `false` when `data.available` is `false`.
+- ✅ `isAvailable` is `true` when `data.available` is `true`.
+- ✅ `isAvailable` defaults to `false` while pending.
+- ✅ `isError` is `true` when query fails.
+
+**`src/components/layout/GpuStatusIndicator.test.tsx` (7 tests):**
+- ✅ Renders yellow dot + "Checking…" when `isPending`.
+- ✅ Renders red dot + "GPU unknown" when `isError`.
+- ✅ Renders green dot + "GPU active" when `available: true`.
+- ✅ Renders grey dot + "CPU only" when `available: false`.
+- ✅ Tooltip shows device, model name, and VRAM stats (GPU case) — uses `userEvent.hover()` to open Radix tooltip portal.
+- ✅ Tooltip omits VRAM section for CPU case.
+- ✅ Tooltip shows error message when `isError`.
+
+**Note:** Tooltip tests use `userEvent.hover()` + `waitFor()` because Radix `TooltipContent` renders via a Portal and is only mounted in the DOM after the trigger is hovered.
 
 ### Manual verification steps
 
@@ -368,21 +375,23 @@ The two indicators sit visually adjacent, giving the operator a quick overview o
 
 ---
 
-## File Changelist
+## File Changelist ✅
 
-| File | Change |
-|---|---|
-| `backend/apps/pages/services.py` | **Create** — `get_gpu_status()` function |
-| `backend/apps/pages/views.py` | **Edit** — add `gpu_status` view |
-| `backend/apps/pages/urls.py` | **Edit** — add `gpu-status/` route |
-| `backend/apps/pages/tests.py` | **Edit** — add GPU status endpoint tests |
-| `frontend/src/types/gpu.ts` | **Create** — `GpuStatus` interface |
-| `frontend/src/api/health.ts` | **Edit** — add `getGpuStatus()` |
-| `frontend/src/api/queryKeys.ts` | **Edit** — add `gpuStatus` key |
-| `frontend/src/hooks/useGpuStatus.ts` | **Create** — TanStack Query hook |
-| `frontend/src/components/layout/GpuStatusIndicator.tsx` | **Create** — indicator component |
-| `frontend/src/components/layout/Navbar.tsx` | **Edit** — mount `<GpuStatusIndicator />` |
-| `docs/standards/api-contracts.md` | **Edit** — document `GET /api/gpu-status/` |
+| File | Change | Status |
+|---|---|---|
+| `backend/apps/pages/services.py` | **Created** — `get_gpu_status()` function | ✅ Done |
+| `backend/apps/pages/views.py` | **Edited** — added `gpu_status` view | ✅ Done |
+| `backend/apps/pages/urls.py` | **Edited** — added `gpu-status/` route | ✅ Done |
+| `backend/apps/pages/tests.py` | **Edited** — 10 tests (unit + integration), all passing | ✅ Done |
+| `frontend/src/types/gpu.ts` | **Created** — `GpuStatus` interface | ✅ Done |
+| `frontend/src/api/health.ts` | **Edited** — added `getGpuStatus()` | ✅ Done |
+| `frontend/src/api/queryKeys.ts` | **Edited** — added `gpuStatus` key | ✅ Done |
+| `frontend/src/hooks/useGpuStatus.ts` | **Created** — TanStack Query hook | ✅ Done |
+| `frontend/src/hooks/useGpuStatus.test.tsx` | **Created** — 4 hook tests, all passing | ✅ Done |
+| `frontend/src/components/layout/GpuStatusIndicator.tsx` | **Created** — indicator component | ✅ Done |
+| `frontend/src/components/layout/GpuStatusIndicator.test.tsx` | **Created** — 7 component tests, all passing | ✅ Done |
+| `frontend/src/components/layout/Navbar.tsx` | **Edited** — mounted `<GpuStatusIndicator />` | ✅ Done |
+| `docs/standards/api-contracts.md` | **Edited** — documented `GET /api/gpu-status/` | ✅ Done |
 
 ---
 
