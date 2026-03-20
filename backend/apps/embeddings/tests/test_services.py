@@ -3,12 +3,14 @@
 import numpy as np
 import pytest
 
+import apps.embeddings.services as svc
 from apps.embeddings.services import (
     EMBEDDING_DIMENSIONS,
     chunk_document,
     embed_texts,
     extract_text_from_pdf,
     generate_answer,
+    get_embedding_model,
 )
 
 # ---------------------------------------------------------------------------
@@ -86,6 +88,146 @@ class TestEmbedTexts:
 
     def test_default_dimension_is_1024(self):
         assert EMBEDDING_DIMENSIONS == 1024
+
+
+# ---------------------------------------------------------------------------
+# get_embedding_model — device selection logic
+# ---------------------------------------------------------------------------
+
+
+class TestGetEmbeddingModel:
+    """Tests for device selection and singleton caching in get_embedding_model()."""
+
+    def _make_fake_model(self, device: str):
+        """Return a minimal SentenceTransformer stand-in with a .device attribute."""
+
+        class _FakeModel:
+            def __init__(self):
+                self.device = device
+
+            def encode(self, texts, **kw):
+                return np.zeros((len(texts), EMBEDDING_DIMENSIONS), dtype=np.float32)
+
+        return _FakeModel()
+
+    def test_returns_singleton_on_repeated_calls(self, monkeypatch):
+        """Calling get_embedding_model() twice returns the same object."""
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        fake = self._make_fake_model("cpu")
+
+        monkeypatch.setattr(
+            "apps.embeddings.services.SentenceTransformer",
+            lambda name, device=None: fake,
+            raising=False,
+        )
+        # Patch the import inside the function so it resolves to our fake
+        import sentence_transformers
+
+        monkeypatch.setattr(
+            sentence_transformers, "SentenceTransformer", lambda name, device=None: fake
+        )
+
+        first = get_embedding_model()
+        second = get_embedding_model()
+        assert first is second
+
+    def test_auto_detect_path_does_not_raise(self, monkeypatch):
+        """When EMBEDDING_DEVICE is unset, get_embedding_model() succeeds."""
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        monkeypatch.setattr(svc, "_EMBEDDING_DEVICE", None)
+        fake = self._make_fake_model("cpu")
+
+        import sentence_transformers
+
+        monkeypatch.setattr(
+            sentence_transformers, "SentenceTransformer", lambda name, device=None: fake
+        )
+
+        model = get_embedding_model()
+        assert model is fake
+
+    def test_explicit_cpu_device_passed_through(self, monkeypatch):
+        """When EMBEDDING_DEVICE='cpu', SentenceTransformer is called with device='cpu'."""
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        monkeypatch.setattr(svc, "_EMBEDDING_DEVICE", "cpu")
+        captured: dict = {}
+
+        class _CapturingModel:
+            def __init__(self, name, device=None):
+                self.device = device
+                captured["device"] = device
+
+        import sentence_transformers
+
+        monkeypatch.setattr(
+            sentence_transformers, "SentenceTransformer", _CapturingModel
+        )
+
+        get_embedding_model()
+        assert captured["device"] == "cpu"
+
+    def test_explicit_cuda_device_passed_through(self, monkeypatch):
+        """When EMBEDDING_DEVICE='cuda', SentenceTransformer is called with device='cuda'."""
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        monkeypatch.setattr(svc, "_EMBEDDING_DEVICE", "cuda")
+        captured: dict = {}
+
+        class _CapturingModel:
+            def __init__(self, name, device=None):
+                self.device = device
+                captured["device"] = device
+
+        import sentence_transformers
+
+        monkeypatch.setattr(
+            sentence_transformers, "SentenceTransformer", _CapturingModel
+        )
+
+        get_embedding_model()
+        assert captured["device"] == "cuda"
+
+    def test_singleton_resets_when_patched_to_none(self, monkeypatch):
+        """Patching _model_singleton back to None forces a fresh load on next call."""
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        fake_a = self._make_fake_model("cpu")
+        fake_b = self._make_fake_model("cpu")
+        calls = iter([fake_a, fake_b])
+
+        import sentence_transformers
+
+        monkeypatch.setattr(
+            sentence_transformers,
+            "SentenceTransformer",
+            lambda name, device=None: next(calls),
+        )
+
+        first = get_embedding_model()
+        assert first is fake_a
+
+        # Reset the singleton, next call must reload
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        second = get_embedding_model()
+        assert second is fake_b
+        assert first is not second
+
+    def test_startup_log_emitted(self, monkeypatch, caplog):
+        """A logger.info message is emitted with the device after model load."""
+        import logging
+
+        monkeypatch.setattr(svc, "_model_singleton", None)
+        monkeypatch.setattr(svc, "_EMBEDDING_DEVICE", None)
+        fake = self._make_fake_model("cpu")
+
+        import sentence_transformers
+
+        monkeypatch.setattr(
+            sentence_transformers, "SentenceTransformer", lambda name, device=None: fake
+        )
+
+        with caplog.at_level(logging.INFO, logger="apps.embeddings.services"):
+            get_embedding_model()
+
+        assert any("cpu" in record.message for record in caplog.records)
 
 
 # ---------------------------------------------------------------------------
@@ -337,7 +479,9 @@ class TestExtractTextFromPptx:
         for slide_texts in slides:
             slide = prs.slides.add_slide(blank_layout)
             for txt in slide_texts:
-                txBox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+                txBox = slide.shapes.add_textbox(
+                    Inches(1), Inches(1), Inches(4), Inches(1)
+                )
                 txBox.text_frame.text = txt
         buf = io.BytesIO()
         prs.save(buf)
@@ -346,7 +490,9 @@ class TestExtractTextFromPptx:
     def test_extracts_slide_text(self):
         from apps.embeddings.services import extract_text_from_pptx
 
-        pptx_bytes = self._make_pptx_bytes([["Slide one content"], ["Slide two content"]])
+        pptx_bytes = self._make_pptx_bytes(
+            [["Slide one content"], ["Slide two content"]]
+        )
         text = extract_text_from_pptx(pptx_bytes)
         assert "Slide one content" in text
         assert "Slide two content" in text
@@ -432,7 +578,9 @@ class TestExtractTextFromJson:
 
 
 class TestExtractTextFromXlsx:
-    def _make_xlsx_bytes(self, rows: list[list[str]], sheet_name: str = "Sheet1") -> bytes:
+    def _make_xlsx_bytes(
+        self, rows: list[list[str]], sheet_name: str = "Sheet1"
+    ) -> bytes:
         import io
 
         import openpyxl
@@ -449,7 +597,9 @@ class TestExtractTextFromXlsx:
     def test_extracts_sheet_data(self):
         from apps.embeddings.services import extract_text_from_xlsx
 
-        xlsx_bytes = self._make_xlsx_bytes([["Name", "Score"], ["Alice", "95"], ["Bob", "82"]])
+        xlsx_bytes = self._make_xlsx_bytes(
+            [["Name", "Score"], ["Alice", "95"], ["Bob", "82"]]
+        )
         text = extract_text_from_xlsx(xlsx_bytes)
         assert "Name: Alice" in text
         assert "Score: 95" in text

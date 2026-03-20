@@ -17,6 +17,7 @@ import {
 import { useUIStore } from "@/store/ui";
 import { useMe, useLogout } from "@/hooks/useAuth";
 import { useHealth } from "@/hooks/useHealth";
+import { GpuStatusIndicator } from "./GpuStatusIndicator";
 import { SidebarNav } from "./Sidebar";
 
 export function Navbar() {
@@ -86,7 +87,11 @@ export function Navbar() {
               ].join(" ")}
             />
             <span className="hidden text-xs text-muted-foreground sm:block">
-              {isPending ? "Checking…" : isConnected ? "API connected" : "API offline"}
+              {isPending
+                ? "Checking…"
+                : isConnected
+                  ? "API connected"
+                  : "API offline"}
             </span>
           </div>
         </TooltipTrigger>
@@ -98,6 +103,8 @@ export function Navbar() {
               : "Cannot reach the backend — check that the server is running"}
         </TooltipContent>
       </Tooltip>
+
+      <GpuStatusIndicator />
 
       <ThemeToggle />
 

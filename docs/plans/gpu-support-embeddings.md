@@ -1,7 +1,7 @@
 # Plan: GPU Support for Embeddings
 
-**Status:** Draft
-**Date:** 2026-03-18
+**Status:** Complete
+**Date:** 2026-03-20
 
 ---
 

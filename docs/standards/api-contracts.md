@@ -143,6 +143,65 @@ Service liveness check.
 
 ---
 
+### `GET /api/gpu-status/`
+
+Returns the compute device available for embedding inference (CUDA GPU, Apple Silicon MPS, or CPU) along with VRAM usage stats where available.
+
+**Auth:** Public
+
+**Response `200` (GPU present — CUDA):**
+```json
+{
+  "available": true,
+  "device": "cuda:0",
+  "device_name": "NVIDIA GeForce RTX 3090",
+  "vram_total_mb": 24576,
+  "vram_used_mb": 1340,
+  "vram_free_mb": 23236,
+  "embedding_model": "BAAI/bge-large-en-v1.5"
+}
+```
+
+**Response `200` (Apple Silicon MPS):**
+```json
+{
+  "available": true,
+  "device": "mps",
+  "device_name": "Apple Silicon (MPS)",
+  "vram_total_mb": null,
+  "vram_used_mb": null,
+  "vram_free_mb": null,
+  "embedding_model": "BAAI/bge-large-en-v1.5"
+}
+```
+
+**Response `200` (CPU only):**
+```json
+{
+  "available": false,
+  "device": "cpu",
+  "device_name": "cpu",
+  "vram_total_mb": null,
+  "vram_used_mb": null,
+  "vram_free_mb": null,
+  "embedding_model": "BAAI/bge-large-en-v1.5"
+}
+```
+
+**Fields:**
+
+| Field | Type | Description |
+|---|---|---|
+| `available` | `boolean` | `true` if a CUDA or MPS GPU is active |
+| `device` | `string` | PyTorch device string, e.g. `"cuda:0"`, `"mps"`, `"cpu"` |
+| `device_name` | `string` | Human-readable device name |
+| `vram_total_mb` | `integer \| null` | Total VRAM in MB (CUDA only; `null` for MPS/CPU) |
+| `vram_used_mb` | `integer \| null` | Allocated VRAM in MB (CUDA only) |
+| `vram_free_mb` | `integer \| null` | Free VRAM in MB (CUDA only; total minus reserved) |
+| `embedding_model` | `string` | Value of `EMBEDDING_MODEL` env var |
+
+---
+
 ## Embeddings & RAG
 
 All endpoints under `/api/embeddings/` require a Bearer JWT token.

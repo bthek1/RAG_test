@@ -7,6 +7,7 @@ Generation backend: Anthropic Claude (ANTHROPIC_API_KEY required for RAG).
 from __future__ import annotations
 
 import io
+import logging
 import os
 import re
 
@@ -288,18 +289,35 @@ def chunk_document(content: str, chunk_size: int = 512, overlap: int = 64) -> li
 # Embedding backend — sentence-transformers (local, free, no API key)
 # ---------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 EMBEDDING_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "1024"))
 _EMBEDDING_MODEL_NAME = os.environ.get("EMBEDDING_MODEL", "BAAI/bge-large-en-v1.5")
+_EMBEDDING_DEVICE = os.environ.get("EMBEDDING_DEVICE", None)
+# None → auto-detect (CUDA if available, else CPU)
+# "cuda" / "cuda:0" → force GPU
+# "cpu" → force CPU
+# "mps" → Apple Silicon (set explicitly; auto-detect is unreliable for MPS)
 _model_singleton = None
 
 
 def get_embedding_model():
-    """Lazy-load and cache the SentenceTransformer model as a module singleton."""
+    """Lazy-load and cache the SentenceTransformer model as a module singleton.
+
+    Device selection (in priority order):
+    1. EMBEDDING_DEVICE env var if set ("cuda", "cuda:0", "mps", "cpu").
+    2. CUDA if torch detects a GPU and was installed with CUDA support.
+    3. CPU as final fallback (always available).
+    """
     global _model_singleton  # noqa: PLW0603
     if _model_singleton is None:
         from sentence_transformers import SentenceTransformer
 
-        _model_singleton = SentenceTransformer(_EMBEDDING_MODEL_NAME)
+        _model_singleton = SentenceTransformer(
+            _EMBEDDING_MODEL_NAME,
+            device=_EMBEDDING_DEVICE,
+        )
+        logger.info("Embedding model loaded on device: %s", _model_singleton.device)
     return _model_singleton
 
 

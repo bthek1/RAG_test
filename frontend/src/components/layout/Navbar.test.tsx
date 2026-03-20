@@ -1,12 +1,31 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useUIStore } from "@/store/ui";
+
+function wrapper({ children }: { children: ReactNode }) {
+  return <TooltipProvider>{children}</TooltipProvider>;
+}
 
 // Mock hooks that require router / query context
 vi.mock("@/hooks/useAuth", () => ({
   useMe: vi.fn().mockReturnValue({ data: null }),
   useLogout: vi.fn().mockReturnValue(vi.fn()),
+}));
+
+vi.mock("@/hooks/useHealth", () => ({
+  useHealth: vi.fn().mockReturnValue({ isConnected: true, isPending: false }),
+}));
+
+vi.mock("@/hooks/useGpuStatus", () => ({
+  useGpuStatus: vi.fn().mockReturnValue({
+    gpuStatus: null,
+    isAvailable: false,
+    isPending: false,
+    isError: false,
+  }),
 }));
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
@@ -49,30 +68,30 @@ describe("Navbar", () => {
   });
 
   it("renders the app name", () => {
-    render(<Navbar />);
+    render(<Navbar />, { wrapper });
     expect(screen.getAllByText("My App").length).toBeGreaterThan(0);
   });
 
   it("renders the mobile hamburger button", () => {
-    render(<Navbar />);
+    render(<Navbar />, { wrapper });
     expect(screen.getByLabelText("Open navigation")).toBeInTheDocument();
   });
 
   it("renders the desktop sidebar toggle button", () => {
-    render(<Navbar />);
+    render(<Navbar />, { wrapper });
     expect(screen.getByLabelText("Toggle sidebar")).toBeInTheDocument();
   });
 
   it("calls toggleSidebar when desktop hamburger is clicked", async () => {
     const user = userEvent.setup();
-    render(<Navbar />);
+    render(<Navbar />, { wrapper });
     const toggle = screen.getByLabelText("Toggle sidebar");
     await user.click(toggle);
     expect(useUIStore.getState().sidebarOpen).toBe(false);
   });
 
   it("does not show sign-out button when not authenticated", () => {
-    render(<Navbar />);
+    render(<Navbar />, { wrapper });
     expect(screen.queryByLabelText("Sign out")).not.toBeInTheDocument();
   });
 
@@ -86,7 +105,7 @@ describe("Navbar", () => {
         date_joined: "",
       },
     } as ReturnType<typeof authHooks.useMe>);
-    render(<Navbar />);
+    render(<Navbar />, { wrapper });
     expect(screen.getByLabelText("Sign out")).toBeInTheDocument();
   });
 });

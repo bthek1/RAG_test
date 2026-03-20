@@ -4,6 +4,7 @@ export const queryKeys = {
     register: ["auth", "register"] as const,
   },
   health: ["health"] as const,
+  gpuStatus: ["gpu-status"] as const,
   embeddings: {
     documents: {
       all: ["embeddings", "documents"] as const,
