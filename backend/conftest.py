@@ -10,9 +10,12 @@ def pytest_collection_modifyitems(items):
     queries against it will always fail.  Mark those items as skipped so the
     rest of the suite can run cleanly.
     """
-    from django.conf import settings
+    try:
+        from django.conf import settings
 
-    engine = settings.DATABASES.get("default", {}).get("ENGINE", "")
+        engine = settings.DATABASES.get("default", {}).get("ENGINE", "")
+    except Exception:
+        return
     if "sqlite" not in engine:
         return
 

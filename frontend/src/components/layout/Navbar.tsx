@@ -18,6 +18,7 @@ import { useUIStore } from "@/store/ui";
 import { useMe, useLogout } from "@/hooks/useAuth";
 import { useHealth } from "@/hooks/useHealth";
 import { GpuStatusIndicator } from "./GpuStatusIndicator";
+import { OllamaStatusIndicator } from "./OllamaStatusIndicator";
 import { SidebarNav } from "./Sidebar";
 
 export function Navbar() {
@@ -105,6 +106,8 @@ export function Navbar() {
       </Tooltip>
 
       <GpuStatusIndicator />
+
+      <OllamaStatusIndicator />
 
       <ThemeToggle />
 

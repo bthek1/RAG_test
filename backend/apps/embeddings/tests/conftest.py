@@ -4,17 +4,14 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from django.contrib.auth import get_user_model
-
-from apps.embeddings.services import EMBEDDING_DIMENSIONS
-
-User = get_user_model()
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def admin_user(db):
     """Create a superuser for admin view tests."""
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
     return User.objects.create_superuser(
         email="admin@example.com",
         password="adminpassword",
@@ -24,6 +21,7 @@ def admin_user(db):
 @pytest.fixture
 def fake_embed(monkeypatch):
     """Monkeypatch embed_texts to return zero vectors — no model load required."""
+    from apps.embeddings.services import EMBEDDING_DIMENSIONS
 
     def _zero_embed(texts: list[str]) -> list[list[float]]:
         return [[0.0] * EMBEDDING_DIMENSIONS for _ in texts]
@@ -35,6 +33,7 @@ def fake_embed(monkeypatch):
 @pytest.fixture
 def fake_model(monkeypatch):
     """Monkeypatch get_embedding_model to return a dummy encoder."""
+    from apps.embeddings.services import EMBEDDING_DIMENSIONS
 
     class _FakeModel:
         def encode(self, texts, **kw):

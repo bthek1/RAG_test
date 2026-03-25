@@ -17,6 +17,13 @@ class OllamaClient:
             response.raise_for_status()
             return response.json().get("models", [])
 
+    def get_running_models(self) -> list[dict]:
+        """Return models currently loaded in memory via /api/ps."""
+        with httpx.Client(timeout=10) as client:
+            response = client.get(f"{self.base_url}/api/ps")
+            response.raise_for_status()
+            return response.json().get("models", [])
+
     def chat(self, model: str, messages: list[dict]) -> dict:
         payload = {"model": model, "messages": messages, "stream": False}
         with httpx.Client(timeout=self.timeout) as client:

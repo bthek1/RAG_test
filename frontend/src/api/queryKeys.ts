@@ -18,5 +18,6 @@ export const queryKeys = {
   },
   chat: {
     models: ["chat", "models"] as const,
+    status: ["chat", "status"] as const,
   },
 } as const;

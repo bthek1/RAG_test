@@ -7,7 +7,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import ChatRequestSerializer
-from .services import chat, list_models, stream_chat
+from .services import chat, get_ollama_status, list_models, stream_chat
+
+
+class OllamaStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(get_ollama_status())
 
 
 class ModelListView(APIView):

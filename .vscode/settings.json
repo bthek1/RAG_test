@@ -4,7 +4,9 @@
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestArgs": [
+    "backend",
     "--rootdir=${workspaceFolder}/backend",
+    "--ds=core.settings.test",
     "--tb=short",
     "--no-header"
   ],

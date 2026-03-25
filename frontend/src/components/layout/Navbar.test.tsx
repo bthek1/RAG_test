@@ -54,6 +54,15 @@ vi.mock("@/hooks/useTheme", () => ({
   useTheme: vi.fn().mockReturnValue({ theme: "light", setTheme: vi.fn() }),
 }));
 
+vi.mock("@/hooks/useOllamaStatus", () => ({
+  useOllamaStatus: vi.fn().mockReturnValue({
+    ollamaStatus: null,
+    isConnected: false,
+    isPending: false,
+    isError: false,
+  }),
+}));
+
 import { Navbar } from "./Navbar";
 import * as authHooks from "@/hooks/useAuth";
 

@@ -22,3 +22,24 @@ export interface OllamaModel {
     quantization_level: string;
   };
 }
+
+export interface OllamaRunningModel {
+  name: string;
+  model: string;
+  size: number;
+  size_vram: number;
+  details: {
+    family: string;
+    parameter_size: string;
+    quantization_level: string;
+  };
+  expires_at: string;
+  processor: string;
+}
+
+export interface OllamaStatus {
+  connected: boolean;
+  base_url: string;
+  models: OllamaModel[];
+  running_models: OllamaRunningModel[];
+}

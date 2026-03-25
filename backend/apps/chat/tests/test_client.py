@@ -58,6 +58,44 @@ class TestChat:
         assert result["message"]["content"] == "Hello!"
 
 
+class TestGetRunningModels:
+    def test_returns_running_model_list(self, client):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "models": [{"name": "analysis-assistant:latest", "size_vram": 4294967296}]
+        }
+        with patch("apps.chat.client.httpx.Client") as MockClient:
+            MockClient.return_value.__enter__.return_value.get.return_value = (
+                mock_response
+            )
+            result = client.get_running_models()
+        assert result[0]["name"] == "analysis-assistant:latest"
+        assert result[0]["size_vram"] == 4294967296
+
+    def test_returns_empty_list_when_none_running(self, client):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"models": []}
+        with patch("apps.chat.client.httpx.Client") as MockClient:
+            MockClient.return_value.__enter__.return_value.get.return_value = (
+                mock_response
+            )
+            result = client.get_running_models()
+        assert result == []
+
+    def test_raises_on_http_error(self, client):
+        import httpx
+
+        with patch("apps.chat.client.httpx.Client") as MockClient:
+            mock_http_client = MockClient.return_value.__enter__.return_value
+            mock_http_client.get.return_value.raise_for_status.side_effect = (
+                httpx.HTTPStatusError(
+                    "error", request=MagicMock(), response=MagicMock()
+                )
+            )
+            with pytest.raises(httpx.HTTPStatusError):
+                client.get_running_models()
+
+
 class TestChatStream:
     def test_yields_parsed_chunks(self, client):
         lines = [

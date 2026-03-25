@@ -3,6 +3,40 @@ from unittest.mock import patch
 
 
 @pytest.mark.django_db
+class TestOllamaStatusView:
+    def test_returns_connected_status(self, authenticated_client):
+        status = {
+            "connected": True,
+            "base_url": "http://localhost:11434",
+            "models": [{"name": "analysis-assistant:latest"}],
+            "running_models": [],
+        }
+        with patch("apps.chat.views.get_ollama_status", return_value=status):
+            response = authenticated_client.get("/api/chat/status/")
+        assert response.status_code == 200
+        assert response.data["connected"] is True
+        assert len(response.data["models"]) == 1
+        assert response.data["base_url"] == "http://localhost:11434"
+
+    def test_returns_disconnected_status(self, authenticated_client):
+        status = {
+            "connected": False,
+            "base_url": "http://localhost:11434",
+            "models": [],
+            "running_models": [],
+        }
+        with patch("apps.chat.views.get_ollama_status", return_value=status):
+            response = authenticated_client.get("/api/chat/status/")
+        assert response.status_code == 200
+        assert response.data["connected"] is False
+        assert response.data["models"] == []
+
+    def test_requires_authentication(self, api_client):
+        response = api_client.get("/api/chat/status/")
+        assert response.status_code == 401
+
+
+@pytest.mark.django_db
 class TestModelListView:
     def test_returns_model_names(self, authenticated_client):
         models = [{"name": "analysis-assistant:latest"}, {"name": "qwen2.5:3b"}]
