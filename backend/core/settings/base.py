@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.pages",
     "apps.embeddings",
+    "apps.chat",
 ]
 
 MIDDLEWARE = [
@@ -121,3 +122,8 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_SOFT_TIME_LIMIT = 300  # 5 min — raises SoftTimeLimitExceeded
 CELERY_TASK_TIME_LIMIT = 360  # 6 min — hard kill
+
+# ── Ollama (local LLM) ─────────────────────────────────────────────────────────
+OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://localhost:11434")
+OLLAMA_MODEL = env("OLLAMA_MODEL", default="analysis-assistant")
+OLLAMA_TIMEOUT = env.int("OLLAMA_TIMEOUT", default=120)

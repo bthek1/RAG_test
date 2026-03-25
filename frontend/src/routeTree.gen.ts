@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RagRouteImport } from './routes/rag'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RagSearchRouteImport } from './routes/rag.search'
 import { Route as RagDocumentsRouteImport } from './routes/rag.documents'
@@ -31,6 +32,11 @@ const RagRoute = RagRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -61,6 +67,7 @@ const DemoChartRoute = DemoChartRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
   '/rag': typeof RagRouteWithChildren
   '/signup': typeof SignupRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
   '/rag': typeof RagRouteWithChildren
   '/signup': typeof SignupRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
   '/rag': typeof RagRouteWithChildren
   '/signup': typeof SignupRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chat'
     | '/login'
     | '/rag'
     | '/signup'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chat'
     | '/login'
     | '/rag'
     | '/signup'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/chat'
     | '/login'
     | '/rag'
     | '/signup'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChatRoute: typeof ChatRoute
   LoginRoute: typeof LoginRoute
   RagRoute: typeof RagRouteWithChildren
   SignupRoute: typeof SignupRoute
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -208,6 +228,7 @@ const RagRouteWithChildren = RagRoute._addFileChildren(RagRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChatRoute: ChatRoute,
   LoginRoute: LoginRoute,
   RagRoute: RagRouteWithChildren,
   SignupRoute: SignupRoute,

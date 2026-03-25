@@ -496,3 +496,88 @@ Content-Type: application/json
 - All primary keys are UUIDs (`uuid4`)
 - Timestamps are ISO 8601 in UTC
 - `CustomUser` extends Django's `AbstractUser` — `email` is the login identifier (no `username` field)
+
+---
+
+## Ollama Chat
+
+Locally-running Ollama LLM chat endpoints. No RAG pipeline — standalone multi-turn chat.
+Default model: `analysis-assistant` (tuned system prompt, temperature 0.4).
+
+### `GET /api/chat/models/`
+
+List all models currently downloaded in the local Ollama instance.
+
+**Auth:** `IsAuthenticated`
+
+**Response `200`:**
+```json
+{
+  "models": [
+    {
+      "name": "analysis-assistant:latest",
+      "model": "analysis-assistant:latest",
+      "size": 2019000000,
+      "details": {
+        "family": "qwen2",
+        "parameter_size": "3.1B",
+        "quantization_level": "Q4_K_M"
+      }
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/chat/`
+
+Blocking chat — sends the full message history and returns the complete reply.
+
+**Auth:** `IsAuthenticated`
+
+**Request body:**
+```json
+{
+  "messages": [
+    { "role": "user", "content": "What is the capital of France?" }
+  ],
+  "model": "analysis-assistant"
+}
+```
+
+- `messages` — array of `{ role, content }` where `role` is `"user"`, `"assistant"`, or `"system"`.
+- `model` — optional; defaults to `OLLAMA_MODEL` setting (`analysis-assistant`).
+
+**Response `200`:**
+```json
+{
+  "reply": "The capital of France is Paris."
+}
+```
+
+---
+
+### `POST /api/chat/stream/`
+
+Streaming SSE — returns tokens one by one as `text/event-stream`.
+
+**Auth:** `IsAuthenticated`
+
+**Request body:** same as `POST /api/chat/`
+
+**Response:** `Content-Type: text/event-stream`, NDJSON lines formatted as SSE:
+
+```
+data: {"token": "The"}
+
+data: {"token": " capital"}
+
+data: {"token": " of"}
+
+data: [DONE]
+```
+
+Each `data:` line is either a JSON object `{ "token": "..." }` or the sentinel `[DONE]`.
+The frontend should use `fetch` + `ReadableStream` (not `EventSource`) because the request is a POST.
+

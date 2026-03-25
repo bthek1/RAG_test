@@ -1,15 +1,37 @@
 {
   "recommendations": [
-    // Python
+    // ── Python / Django ───────────────────────────────────────────────────────
     "ms-python.python",
     "ms-python.vscode-pylance",
     "charliermarsh.ruff",
-    // Testing
-    "ms-python.python",
-    "vitest.explorer",
-    // Frontend
+    "batisteo.vscode-django",
+
+    // ── Frontend ──────────────────────────────────────────────────────────────
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+
+    // ── Testing ───────────────────────────────────────────────────────────────
+    "vitest.explorer",
+
+    // ── Database ──────────────────────────────────────────────────────────────
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+
+    // ── Docker ────────────────────────────────────────────────────────────────
+    "ms-azuretools.vscode-docker",
+
+    // ── Git ───────────────────────────────────────────────────────────────────
+    "eamodio.gitlens",
+
+    // ── AI ────────────────────────────────────────────────────────────────────
+    "github.copilot",
+    "github.copilot-chat",
+
+    // ── File formats ─────────────────────────────────────────────────────────
+    "mikestead.dotenv",
+    "tamasfe.even-better-toml",
+    "redhat.vscode-yaml"
   ]
 }
+
