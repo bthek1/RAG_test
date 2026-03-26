@@ -11,10 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResearcherRouteImport } from './routes/researcher'
+import { Route as RagRouteImport } from './routes/rag'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResearcherSearchRouteImport } from './routes/researcher.search'
+import { Route as RagSearchRouteImport } from './routes/rag.search'
+import { Route as RagDocumentsRouteImport } from './routes/rag.documents'
+import { Route as RagChatRouteImport } from './routes/rag.chat'
 import { Route as DemoChartRouteImport } from './routes/demo.chart'
 
 const SignupRoute = SignupRouteImport.update({
@@ -25,6 +29,11 @@ const SignupRoute = SignupRouteImport.update({
 const ResearcherRoute = ResearcherRouteImport.update({
   id: '/researcher',
   path: '/researcher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RagRoute = RagRouteImport.update({
+  id: '/rag',
+  path: '/rag',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -47,6 +56,21 @@ const ResearcherSearchRoute = ResearcherSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => ResearcherRoute,
 } as any)
+const RagSearchRoute = RagSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => RagRoute,
+} as any)
+const RagDocumentsRoute = RagDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => RagRoute,
+} as any)
+const RagChatRoute = RagChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => RagRoute,
+} as any)
 const DemoChartRoute = DemoChartRouteImport.update({
   id: '/demo/chart',
   path: '/demo/chart',
@@ -57,18 +81,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
+  '/rag': typeof RagRouteWithChildren
   '/researcher': typeof ResearcherRouteWithChildren
   '/signup': typeof SignupRoute
   '/demo/chart': typeof DemoChartRoute
+  '/rag/chat': typeof RagChatRoute
+  '/rag/documents': typeof RagDocumentsRoute
+  '/rag/search': typeof RagSearchRoute
   '/researcher/search': typeof ResearcherSearchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
+  '/rag': typeof RagRouteWithChildren
   '/researcher': typeof ResearcherRouteWithChildren
   '/signup': typeof SignupRoute
   '/demo/chart': typeof DemoChartRoute
+  '/rag/chat': typeof RagChatRoute
+  '/rag/documents': typeof RagDocumentsRoute
+  '/rag/search': typeof RagSearchRoute
   '/researcher/search': typeof ResearcherSearchRoute
 }
 export interface FileRoutesById {
@@ -76,9 +108,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/login': typeof LoginRoute
+  '/rag': typeof RagRouteWithChildren
   '/researcher': typeof ResearcherRouteWithChildren
   '/signup': typeof SignupRoute
   '/demo/chart': typeof DemoChartRoute
+  '/rag/chat': typeof RagChatRoute
+  '/rag/documents': typeof RagDocumentsRoute
+  '/rag/search': typeof RagSearchRoute
   '/researcher/search': typeof ResearcherSearchRoute
 }
 export interface FileRouteTypes {
@@ -87,27 +123,39 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/login'
+    | '/rag'
     | '/researcher'
     | '/signup'
     | '/demo/chart'
+    | '/rag/chat'
+    | '/rag/documents'
+    | '/rag/search'
     | '/researcher/search'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/chat'
     | '/login'
+    | '/rag'
     | '/researcher'
     | '/signup'
     | '/demo/chart'
+    | '/rag/chat'
+    | '/rag/documents'
+    | '/rag/search'
     | '/researcher/search'
   id:
     | '__root__'
     | '/'
     | '/chat'
     | '/login'
+    | '/rag'
     | '/researcher'
     | '/signup'
     | '/demo/chart'
+    | '/rag/chat'
+    | '/rag/documents'
+    | '/rag/search'
     | '/researcher/search'
   fileRoutesById: FileRoutesById
 }
@@ -115,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
   LoginRoute: typeof LoginRoute
+  RagRoute: typeof RagRouteWithChildren
   ResearcherRoute: typeof ResearcherRouteWithChildren
   SignupRoute: typeof SignupRoute
   DemoChartRoute: typeof DemoChartRoute
@@ -134,6 +183,13 @@ declare module '@tanstack/react-router' {
       path: '/researcher'
       fullPath: '/researcher'
       preLoaderRoute: typeof ResearcherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rag': {
+      id: '/rag'
+      path: '/rag'
+      fullPath: '/rag'
+      preLoaderRoute: typeof RagRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -164,6 +220,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearcherSearchRouteImport
       parentRoute: typeof ResearcherRoute
     }
+    '/rag/search': {
+      id: '/rag/search'
+      path: '/search'
+      fullPath: '/rag/search'
+      preLoaderRoute: typeof RagSearchRouteImport
+      parentRoute: typeof RagRoute
+    }
+    '/rag/documents': {
+      id: '/rag/documents'
+      path: '/documents'
+      fullPath: '/rag/documents'
+      preLoaderRoute: typeof RagDocumentsRouteImport
+      parentRoute: typeof RagRoute
+    }
+    '/rag/chat': {
+      id: '/rag/chat'
+      path: '/chat'
+      fullPath: '/rag/chat'
+      preLoaderRoute: typeof RagChatRouteImport
+      parentRoute: typeof RagRoute
+    }
     '/demo/chart': {
       id: '/demo/chart'
       path: '/demo/chart'
@@ -173,6 +250,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface RagRouteChildren {
+  RagChatRoute: typeof RagChatRoute
+  RagDocumentsRoute: typeof RagDocumentsRoute
+  RagSearchRoute: typeof RagSearchRoute
+}
+
+const RagRouteChildren: RagRouteChildren = {
+  RagChatRoute: RagChatRoute,
+  RagDocumentsRoute: RagDocumentsRoute,
+  RagSearchRoute: RagSearchRoute,
+}
+
+const RagRouteWithChildren = RagRoute._addFileChildren(RagRouteChildren)
 
 interface ResearcherRouteChildren {
   ResearcherSearchRoute: typeof ResearcherSearchRoute
@@ -190,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
   LoginRoute: LoginRoute,
+  RagRoute: RagRouteWithChildren,
   ResearcherRoute: ResearcherRouteWithChildren,
   SignupRoute: SignupRoute,
   DemoChartRoute: DemoChartRoute,

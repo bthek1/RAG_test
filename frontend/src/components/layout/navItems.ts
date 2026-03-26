@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart2, Bot, Globe } from "lucide-react";
+import { BarChart2, BookOpen, Bot, Globe, Search } from "lucide-react";
 
 export interface NavItem {
   label: string;
@@ -10,5 +10,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: "Dashboard", to: "/demo/chart", icon: BarChart2 },
   { label: "Ollama Chat", to: "/chat", icon: Bot },
+  { label: "Documents", to: "/rag/documents", icon: BookOpen },
+  { label: "Search", to: "/rag/search", icon: Search },
   { label: "Researcher", to: "/researcher/search", icon: Globe },
 ];
