@@ -7,10 +7,12 @@ import type { ChatMessage } from "@/types/chat";
 const BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
 
 export function useModels() {
+  const isAuthenticated = !!localStorage.getItem("access_token");
   return useQuery({
     queryKey: queryKeys.chat.models,
     queryFn: listModels,
     staleTime: 60_000,
+    enabled: isAuthenticated,
   });
 }
 

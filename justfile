@@ -74,9 +74,9 @@ be-showmigrations:
 be-shell:
     cd backend && uv run python manage.py shell
 
-# Create a Django superuser
+# Recreate a Django superuser from env vars (DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD)
 be-superuser:
-    cd backend && uv run python manage.py createsuperuser --noinput
+    cd backend && uv run python manage.py recreate_superuser
 
 # Collect static files
 be-collectstatic:

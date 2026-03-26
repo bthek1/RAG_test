@@ -10,4 +10,5 @@ urlpatterns = [
     path("api/", include("apps.pages.urls")),
     path("api/embeddings/", include("apps.embeddings.urls")),
     path("api/chat/", include("apps.chat.urls")),
+    path("api/researcher/", include("apps.researcher.urls")),
 ]

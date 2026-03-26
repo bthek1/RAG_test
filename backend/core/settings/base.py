@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.pages",
     "apps.embeddings",
     "apps.chat",
+    "apps.researcher",
 ]
 
 MIDDLEWARE = [

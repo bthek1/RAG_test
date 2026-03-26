@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Menu, User } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
@@ -15,24 +14,18 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useUIStore } from "@/store/ui";
-import { useMe, useLogout } from "@/hooks/useAuth";
+import { useMe } from "@/hooks/useAuth";
 import { useHealth } from "@/hooks/useHealth";
 import { GpuStatusIndicator } from "./GpuStatusIndicator";
 import { OllamaStatusIndicator } from "./OllamaStatusIndicator";
 import { SidebarNav } from "./Sidebar";
+import { AccountMenu } from "./AccountMenu";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const { data: me } = useMe();
-  const logout = useLogout();
-  const navigate = useNavigate();
   const { isConnected, isPending } = useHealth();
-
-  function handleLogout() {
-    logout();
-    navigate({ to: "/login" });
-  }
 
   const displayName = me
     ? [me.first_name, me.last_name].filter(Boolean).join(" ") || me.email
@@ -111,25 +104,7 @@ export function Navbar() {
 
       <ThemeToggle />
 
-      {displayName && (
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span className="hidden text-sm text-muted-foreground sm:block">
-            {displayName}
-          </span>
-        </div>
-      )}
-
-      {me && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleLogout}
-          aria-label="Sign out"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
-      )}
+      {displayName && <AccountMenu displayName={displayName} />}
     </header>
   );
 }
