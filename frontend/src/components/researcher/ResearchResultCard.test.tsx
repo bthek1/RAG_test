@@ -155,17 +155,21 @@ describe("WebResultCard (within ResearchResultCard)", () => {
 
     render(<ResearchResultCard result={result} rank={1} />);
 
-    const toggleButton = screen.getByRole("button", {
-      name: /Hide scraped content/,
+    // Initially collapsed — button says "Show scraped content", content not in DOM
+    const showButton = screen.getByRole("button", {
+      name: /Show scraped content/,
     });
     expect(
       screen.queryByText("The full scraped content goes here"),
-    ).not.toBeVisible();
+    ).not.toBeInTheDocument();
 
-    await user.click(toggleButton);
+    await user.click(showButton);
     expect(
       screen.getByText("The full scraped content goes here"),
-    ).toBeVisible();
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Hide scraped content/ }),
+    ).toBeInTheDocument();
   });
 
   it("marks scrape failure in red", async () => {

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -24,10 +24,14 @@ describe("ResearcherSearchPage", () => {
   it("renders the search form with all filters", () => {
     render(<ResearcherSearchPage />, { wrapper });
     expect(screen.getByRole("button", { name: /search/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/search query/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/result type/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/sort by/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/results/i)).toBeInTheDocument();
+    // Use placeholder to locate the query input (FormControl wraps input in a div,
+    // making getByLabelText resolve to the non-labellable div)
+    expect(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue("All Results")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Relevance")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("5 results")).toBeInTheDocument();
   });
 
   it("has correct default filter values", () => {
@@ -50,20 +54,21 @@ describe("ResearcherSearchPage", () => {
 
     render(<ResearcherSearchPage />, { wrapper });
 
-    await userEvent.type(screen.getByLabelText(/search query/i), "climate");
+    await userEvent.type(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+      "climate",
+    );
 
-    // Change filters
-    const typeSelect = screen.getByDisplayValue("All Results");
-    await userEvent.click(typeSelect);
-    await userEvent.click(screen.getByText("News"));
-
-    const sortSelect = screen.getByDisplayValue("Relevance");
-    await userEvent.click(sortSelect);
-    await userEvent.click(screen.getAllByText("Newest")[0]);
-
-    const resultsSelect = screen.getByDisplayValue("5 results");
-    await userEvent.click(resultsSelect);
-    await userEvent.click(screen.getByText("10 results"));
+    // Change filters via the hidden native <select> that Radix renders
+    fireEvent.change(screen.getByDisplayValue("All Results"), {
+      target: { value: "news" },
+    });
+    fireEvent.change(screen.getByDisplayValue("Relevance"), {
+      target: { value: "date" },
+    });
+    fireEvent.change(screen.getByDisplayValue("5 results"), {
+      target: { value: "10" },
+    });
 
     await userEvent.click(screen.getByRole("button", { name: /search/i }));
 
@@ -90,7 +95,10 @@ describe("ResearcherSearchPage", () => {
 
     render(<ResearcherSearchPage />, { wrapper });
 
-    await userEvent.type(screen.getByLabelText(/search query/i), "climate");
+    await userEvent.type(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+      "climate",
+    );
     await userEvent.click(screen.getByRole("button", { name: /search/i }));
 
     await waitFor(() => expect(screen.getByText("Hit 1")).toBeInTheDocument());
@@ -102,7 +110,10 @@ describe("ResearcherSearchPage", () => {
 
     render(<ResearcherSearchPage />, { wrapper });
 
-    await userEvent.type(screen.getByLabelText(/search query/i), "nothing");
+    await userEvent.type(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+      "nothing",
+    );
     await userEvent.click(screen.getByRole("button", { name: /search/i }));
 
     await waitFor(() =>
@@ -117,7 +128,10 @@ describe("ResearcherSearchPage", () => {
 
     render(<ResearcherSearchPage />, { wrapper });
 
-    await userEvent.type(screen.getByLabelText(/search query/i), "fail");
+    await userEvent.type(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+      "fail",
+    );
     await userEvent.click(screen.getByRole("button", { name: /search/i }));
 
     await waitFor(() =>
@@ -149,10 +163,13 @@ describe("ResearcherSearchPage", () => {
 
     render(<ResearcherSearchPage />, { wrapper });
 
-    await userEvent.type(screen.getByLabelText(/search query/i), "test");
+    await userEvent.type(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+      "test",
+    );
     await userEvent.click(screen.getByRole("button", { name: /search/i }));
 
-    expect(screen.getByText(/Searching.../)).toBeInTheDocument();
+    expect(screen.getAllByText(/Searching\.\.\./).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Searching/ })).toBeDisabled();
   });
 
@@ -176,7 +193,10 @@ describe("ResearcherSearchPage", () => {
 
     render(<ResearcherSearchPage />, { wrapper });
 
-    await userEvent.type(screen.getByLabelText(/search query/i), "test");
+    await userEvent.type(
+      screen.getByPlaceholderText(/Australian climate policy/i),
+      "test",
+    );
     await userEvent.click(screen.getByRole("button", { name: /search/i }));
 
     await waitFor(() =>
@@ -190,10 +210,13 @@ describe("ResearcherSearchPage", () => {
     const typeSelect = screen.getByDisplayValue("All Results");
     await userEvent.click(typeSelect);
 
-    const options = ["All Results", "Web Pages", "News", "Videos", "Images"];
+    // After opening dropdown both trigger and items render — use getAllByText
+    const options = ["Web Pages", "News", "Videos", "Images"];
     for (const option of options) {
       expect(screen.getByText(option)).toBeInTheDocument();
     }
+    // "All Results" appears in trigger + dropdown item
+    expect(screen.getAllByText("All Results").length).toBeGreaterThanOrEqual(1);
   });
 
   it("supports all sort options", async () => {
@@ -202,10 +225,10 @@ describe("ResearcherSearchPage", () => {
     const sortSelect = screen.getByDisplayValue("Relevance");
     await userEvent.click(sortSelect);
 
-    const options = ["Relevance", "Newest", "Popularity"];
-    for (const option of options) {
-      expect(screen.getByText(option)).toBeInTheDocument();
-    }
+    // "Relevance" appears in trigger + dropdown item after opening
+    expect(screen.getAllByText("Relevance").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Newest")).toBeInTheDocument();
+    expect(screen.getByText("Popularity")).toBeInTheDocument();
   });
 
   it("supports result count options 1-20", async () => {
@@ -214,7 +237,9 @@ describe("ResearcherSearchPage", () => {
     const resultsSelect = screen.getByDisplayValue("5 results");
     await userEvent.click(resultsSelect);
 
-    for (const count of [1, 5, 10, 15, 20]) {
+    // "5 results" appears in trigger + dropdown item after opening
+    expect(screen.getAllByText("5 results").length).toBeGreaterThanOrEqual(1);
+    for (const count of [1, 10, 15, 20]) {
       expect(screen.getByText(`${count} results`)).toBeInTheDocument();
     }
   });

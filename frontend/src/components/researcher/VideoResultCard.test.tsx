@@ -66,13 +66,20 @@ describe("VideoResultCard", () => {
     const user = userEvent.setup();
     render(<VideoResultCard result={mockResult} rank={1} />);
 
-    const toggleButton = screen.getByRole("button", {
-      name: /Hide transcript/,
-    });
-    expect(screen.queryByText(mockResult.scraped_text)).not.toBeVisible();
+    // Initially collapsed — button says "Show transcript", content not in DOM
+    const showButton = screen.getByRole("button", { name: /Show transcript/ });
+    expect(screen.queryByText(mockResult.scraped_text)).not.toBeInTheDocument();
 
-    await user.click(toggleButton);
-    expect(screen.getByText(mockResult.scraped_text)).toBeVisible();
+    // Expand
+    await user.click(showButton);
+    expect(screen.getByText(mockResult.scraped_text)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Hide transcript/ }),
+    ).toBeInTheDocument();
+
+    // Collapse again
+    await user.click(screen.getByRole("button", { name: /Hide transcript/ }));
+    expect(screen.queryByText(mockResult.scraped_text)).not.toBeInTheDocument();
   });
 
   it("handles missing thumbnail gracefully", () => {
