@@ -5,8 +5,8 @@ import pytest
 from apps.researcher.search import search
 
 # The search() facade delegates to DDGClient which wraps DDGS.
-# We patch at the ddg_client module level since that's where DDGS is imported.
-_PATCH_TARGET = "apps.researcher.ddg_client.DDGS"
+# We patch at the search module level since that's where DDGS is imported.
+_PATCH_TARGET = "apps.researcher.search.DDGS"
 
 
 def test_search_returns_results():

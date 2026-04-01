@@ -101,10 +101,12 @@ describe("Navbar", () => {
 
   it("does not show sign-out button when not authenticated", () => {
     render(<Navbar />, { wrapper });
-    expect(screen.queryByLabelText("Sign out")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /sign out/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("shows sign-out button when authenticated", () => {
+  it("shows sign-out button when authenticated", async () => {
     vi.mocked(authHooks.useMe).mockReturnValue({
       data: {
         id: "1",
@@ -114,7 +116,14 @@ describe("Navbar", () => {
         date_joined: "",
       },
     } as ReturnType<typeof authHooks.useMe>);
+    const user = userEvent.setup();
     render(<Navbar />, { wrapper });
-    expect(screen.getByLabelText("Sign out")).toBeInTheDocument();
+    // Open the account menu popover to expose the Sign out button
+    await user.click(
+      screen.getByRole("button", { name: /test@example\.com/i }),
+    );
+    expect(
+      screen.getByRole("button", { name: /sign out/i }),
+    ).toBeInTheDocument();
   });
 });
