@@ -15,7 +15,7 @@ function LandingPage() {
   // Redirect authenticated users to the main app
   useEffect(() => {
     if (me) {
-      navigate({ to: "/demo/chart" });
+      navigate({ to: "/rag/documents" });
     }
   }, [me, navigate]);
 

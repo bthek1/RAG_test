@@ -19,7 +19,6 @@ import { Route as ResearcherSearchRouteImport } from './routes/researcher.search
 import { Route as RagSearchRouteImport } from './routes/rag.search'
 import { Route as RagDocumentsRouteImport } from './routes/rag.documents'
 import { Route as RagChatRouteImport } from './routes/rag.chat'
-import { Route as DemoChartRouteImport } from './routes/demo.chart'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -71,11 +70,6 @@ const RagChatRoute = RagChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => RagRoute,
 } as any)
-const DemoChartRoute = DemoChartRouteImport.update({
-  id: '/demo/chart',
-  path: '/demo/chart',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -84,7 +78,6 @@ export interface FileRoutesByFullPath {
   '/rag': typeof RagRouteWithChildren
   '/researcher': typeof ResearcherRouteWithChildren
   '/signup': typeof SignupRoute
-  '/demo/chart': typeof DemoChartRoute
   '/rag/chat': typeof RagChatRoute
   '/rag/documents': typeof RagDocumentsRoute
   '/rag/search': typeof RagSearchRoute
@@ -97,7 +90,6 @@ export interface FileRoutesByTo {
   '/rag': typeof RagRouteWithChildren
   '/researcher': typeof ResearcherRouteWithChildren
   '/signup': typeof SignupRoute
-  '/demo/chart': typeof DemoChartRoute
   '/rag/chat': typeof RagChatRoute
   '/rag/documents': typeof RagDocumentsRoute
   '/rag/search': typeof RagSearchRoute
@@ -111,7 +103,6 @@ export interface FileRoutesById {
   '/rag': typeof RagRouteWithChildren
   '/researcher': typeof ResearcherRouteWithChildren
   '/signup': typeof SignupRoute
-  '/demo/chart': typeof DemoChartRoute
   '/rag/chat': typeof RagChatRoute
   '/rag/documents': typeof RagDocumentsRoute
   '/rag/search': typeof RagSearchRoute
@@ -126,7 +117,6 @@ export interface FileRouteTypes {
     | '/rag'
     | '/researcher'
     | '/signup'
-    | '/demo/chart'
     | '/rag/chat'
     | '/rag/documents'
     | '/rag/search'
@@ -139,7 +129,6 @@ export interface FileRouteTypes {
     | '/rag'
     | '/researcher'
     | '/signup'
-    | '/demo/chart'
     | '/rag/chat'
     | '/rag/documents'
     | '/rag/search'
@@ -152,7 +141,6 @@ export interface FileRouteTypes {
     | '/rag'
     | '/researcher'
     | '/signup'
-    | '/demo/chart'
     | '/rag/chat'
     | '/rag/documents'
     | '/rag/search'
@@ -166,7 +154,6 @@ export interface RootRouteChildren {
   RagRoute: typeof RagRouteWithChildren
   ResearcherRoute: typeof ResearcherRouteWithChildren
   SignupRoute: typeof SignupRoute
-  DemoChartRoute: typeof DemoChartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -241,13 +228,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RagChatRouteImport
       parentRoute: typeof RagRoute
     }
-    '/demo/chart': {
-      id: '/demo/chart'
-      path: '/demo/chart'
-      fullPath: '/demo/chart'
-      preLoaderRoute: typeof DemoChartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -284,7 +264,6 @@ const rootRouteChildren: RootRouteChildren = {
   RagRoute: RagRouteWithChildren,
   ResearcherRoute: ResearcherRouteWithChildren,
   SignupRoute: SignupRoute,
-  DemoChartRoute: DemoChartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

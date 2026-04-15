@@ -2,8 +2,9 @@ from celery.result import AsyncResult
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, serializers, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -188,3 +189,9 @@ class RevokeTaskView(APIView):
     def post(self, _request: Request, task_id: str) -> Response:
         AsyncResult(task_id).revoke(terminate=True)
         return Response({"task_id": task_id, "revoked": True})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def gpu_status(request):
+    return Response(services.get_gpu_status())

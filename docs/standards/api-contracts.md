@@ -143,7 +143,7 @@ Service liveness check.
 
 ---
 
-### `GET /api/gpu-status/`
+### `GET /api/embeddings/gpu-status/`
 
 Returns the compute device available for embedding inference (CUDA GPU, Apple Silicon MPS, or CPU) along with VRAM usage stats where available.
 

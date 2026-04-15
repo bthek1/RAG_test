@@ -5,7 +5,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    useRouterState: vi.fn().mockReturnValue("/demo/chart"),
+    useRouterState: vi.fn().mockReturnValue("/rag/documents"),
     Link: ({
       children,
       to,
@@ -27,19 +27,20 @@ import { Sidebar, SidebarNav } from "./Sidebar";
 describe("SidebarNav", () => {
   it("renders all nav items", () => {
     render(<SidebarNav />);
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Ollama Chat")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
   });
 
   it('marks the active link with aria-current="page"', () => {
     render(<SidebarNav />);
-    const link = screen.getByText("Dashboard").closest("a");
+    const link = screen.getByText("Documents").closest("a");
     expect(link).toHaveAttribute("aria-current", "page");
   });
 
   it("renders icon-only labels as title attributes when collapsed", () => {
     render(<SidebarNav collapsed />);
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
-    const link = screen.getByTitle("Dashboard");
+    expect(screen.queryByText("Ollama Chat")).not.toBeInTheDocument();
+    const link = screen.getByTitle("Ollama Chat");
     expect(link).toBeInTheDocument();
   });
 });

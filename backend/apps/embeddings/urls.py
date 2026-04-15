@@ -9,6 +9,7 @@ from .views import (
     RevokeTaskView,
     SimilaritySearchView,
     TaskStatusView,
+    gpu_status,
 )
 
 urlpatterns = [
@@ -32,4 +33,5 @@ urlpatterns = [
         RevokeTaskView.as_view(),
         name="task-revoke",
     ),
+    path("gpu-status/", gpu_status, name="gpu-status"),
 ]

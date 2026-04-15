@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     "django_celery_beat",
     # Local
     "apps.accounts",
-    "apps.pages",
     "apps.embeddings",
     "apps.chat",
     "apps.researcher",

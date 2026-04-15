@@ -7,6 +7,8 @@ export async function getHealth(): Promise<{ status: string }> {
 }
 
 export async function getGpuStatus(): Promise<GpuStatus> {
-  const { data } = await apiClient.get<GpuStatus>("/api/gpu-status/");
+  const { data } = await apiClient.get<GpuStatus>(
+    "/api/embeddings/gpu-status/",
+  );
   return data;
 }
