@@ -226,3 +226,35 @@ clean:
 # Clean everything including node_modules and build artefacts
 clean-all: clean
     rm -rf frontend/node_modules frontend/dist
+
+# ── AWS ────────────────────────────────────────────────────────────────────────
+
+AWS_PROFILE := "ben-sso"
+EC2_IP := "52.64.204.65"
+EC2_ID := "i-0b743f46aa5f97190"
+
+# Login to AWS SSO
+aws-login:
+    @echo "🔐 Logging into AWS SSO with profile: {{ AWS_PROFILE }}"
+    aws sso login --profile {{ AWS_PROFILE }}
+    @echo "✅ AWS SSO login successful"
+
+# Check AWS SSO session status
+aws-status:
+    @echo "📊 Checking AWS SSO session status..."
+    aws sts get-caller-identity --profile {{ AWS_PROFILE }}
+
+# Open AWS Console in web browser
+aws-console:
+    #!/usr/bin/env bash
+    echo "🌐 Opening AWS Console for profile: {{ AWS_PROFILE }}"
+    echo "This will authenticate via SSO and open your browser..."
+    SSO_OUTPUT=$(aws sso login --profile {{ AWS_PROFILE }} 2>&1)
+    echo "$SSO_OUTPUT"
+    SSO_URL=$(echo "$SSO_OUTPUT" | grep -oP 'Successfully logged into Start URL: \K.*')
+    if [ -n "$SSO_URL" ]; then
+        echo "✅ Opening AWS SSO Start URL: $SSO_URL"
+        xdg-open "$SSO_URL" || open "$SSO_URL" || echo "Please open $SSO_URL in your browser"
+    else
+        echo "❌ Could not extract SSO Start URL from output"
+    fi

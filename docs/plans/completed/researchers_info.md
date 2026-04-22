@@ -1,7 +1,8 @@
 # Plan: Researcher App — Search Engine + Frontend UI
 
-**Status:** Draft
+**Status:** Complete
 **Date:** 2026-03-25
+**Completed:** 2026-04-22
 
 ---
 
@@ -44,39 +45,39 @@ uv add duckduckgo-search httpx beautifulsoup4
 
 ## Phases
 
-### Phase 1 — Core backend: search + scrape
+### Phase 1 — Core backend: search + scrape ✅
 
-- [ ] Create `apps/researcher/` Django app, register in `INSTALLED_APPS`
-- [ ] `search.py` — DuckDuckGo query → list of `{title, url, snippet}`
-- [ ] `scraper.py` — fetch URL, strip boilerplate, return clean text
-- [ ] `services.py` — orchestrate search + scrape, return structured results
-- [ ] Unit tests: `test_search.py`, `test_scraper.py` (all network mocked)
+- [x] Create `apps/researcher/` Django app, register in `INSTALLED_APPS`
+- [x] `search.py` — DDGClient wrapper with text(), news(), videos(), images() methods
+- [x] `scraper.py` — fetch URL, strip boilerplate, return clean text
+- [x] `services.py` — orchestrate search + scrape, supports "web", "news", "video", "image", "all" types
+- [x] Unit tests: `test_ddg_client.py`, `test_scraper.py`, `test_search.py`, `test_services.py` (all network mocked)
 
-### Phase 2 — Backend API endpoint
+### Phase 2 — Backend API endpoint ✅
 
-- [ ] `serializers.py` — `SearchRequestSerializer`, `SearchResultSerializer`
-- [ ] `views.py` — `SearchView(APIView)` with `IsAuthenticated`
-- [ ] `urls.py` — `POST /api/researcher/search/`
-- [ ] Register URL in `core/urls.py`
-- [ ] Integration tests: `test_views.py` (mocked network, real endpoint)
+- [x] `serializers.py` — `SearchRequestSerializer`, `SearchResultSerializer` (with type-specific fields for news, video, image)
+- [x] `views.py` — `SearchView(APIView)` with `IsAuthenticated`
+- [x] `urls.py` — `POST /api/researcher/search/`
+- [x] Register URL in `core/urls.py`
+- [x] Integration tests: `test_views.py` (mocked network, real endpoint)
 
-### Phase 3 — React frontend
+### Phase 3 — React frontend ✅
 
-- [ ] `src/types/researcher.ts` — `SearchRequest`, `SearchResult` types
-- [ ] `src/api/researcher.ts` — `runSearch(payload)` Axios call
-- [ ] `src/api/queryKeys.ts` — add `researcher` key namespace
-- [ ] `src/schemas/researcher.ts` — Zod schema for search form
-- [ ] `src/hooks/useResearcher.ts` — `useRunSearch()` mutation hook
-- [ ] `src/routes/researcher.tsx` — layout wrapper + sidebar nav (`<Outlet>`)
-- [ ] `src/routes/researcher.search.tsx` — search form + results page
-- [ ] `src/components/researcher/ResearchResultCard.tsx` — result card with expandable scraped text
-- [ ] Add "Researcher" nav link to `AppLayout` sidebar
+- [x] `src/types/researcher.ts` — `SearchRequest`, `SearchResult` discriminated union with type-specific interfaces
+- [x] `src/api/researcher.ts` — `runSearch(payload)` Axios call
+- [x] `src/api/queryKeys.ts` — `researcher` key namespace added
+- [x] `src/schemas/researcher.ts` — Zod schema for search form
+- [x] `src/hooks/useResearcher.ts` — `useRunSearch()` mutation hook
+- [x] `src/routes/researcher.tsx` — layout wrapper + sidebar nav (`<Outlet>`)
+- [x] `src/routes/researcher.search.tsx` — search form + results page with multi-type filtering
+- [x] `src/components/researcher/ResearchResultCard.tsx` — dispatcher + `NewsResultCard`, `VideoResultCard`, `ImageResultCard` variants
+- [x] Add "Researcher" nav link to `AppLayout` sidebar (via `navItems.ts`)
 
-### Phase 4 — Frontend tests
+### Phase 4 — Frontend tests ✅
 
-- [ ] `useResearcher.test.ts` — mutation hook unit tests (Axios mocked)
-- [ ] `ResearchResultCard.test.tsx` — render + expand/collapse interaction
-- [ ] `researcher.search.test.tsx` — form submit → results list renders
+- [x] `useResearcher.test.ts` — mutation hook unit tests (Axios mocked)
+- [x] `ResearchResultCard.test.tsx` — render + expand/collapse interaction (all 4 card variants tested)
+- [x] `researcher.search.test.tsx` — form submit → results list renders
 
 ---
 

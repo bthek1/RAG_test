@@ -1,7 +1,8 @@
 # Plan: Remove Dashboard Page
 
-**Status:** Draft  
-**Date:** 2026-04-15
+**Status:** Complete  
+**Date:** 2026-04-15  
+**Completed:** 2026-04-22
 
 ---
 
@@ -19,56 +20,41 @@ The dashboard is a frontend-only chart demo (`/demo/chart`) that was added as a 
 
 ### Phase 1 — Remove the Route File
 
-- [ ] Delete `frontend/src/routes/demo.chart.tsx`
-- [ ] Regenerate the TanStack Router route tree: `cd frontend && npm run generate-routes` (or the equivalent build step triggers this automatically)
-- [ ] Confirm `frontend/src/routeTree.gen.ts` no longer contains `/demo/chart`
+- [x] Delete `frontend/src/routes/demo.chart.tsx`
+- [x] Regenerate the TanStack Router route tree: `cd frontend && npm run generate-routes` (or the equivalent build step triggers this automatically)
+- [x] Confirm `frontend/src/routeTree.gen.ts` no longer contains `/demo/chart`
 
 ### Phase 2 — Remove the Navigation Item
 
-- [ ] In `frontend/src/components/layout/navItems.ts`, remove the `Dashboard` entry (`{ label: "Dashboard", to: "/demo/chart", icon: BarChart2 }`)
-- [ ] Remove the `BarChart2` import from `lucide-react` if it is no longer used elsewhere in that file
+- [x] In `frontend/src/components/layout/navItems.ts`, remove the `Dashboard` entry (`{ label: "Dashboard", to: "/demo/chart", icon: BarChart2 }`)
+- [x] Remove the `BarChart2` import from `lucide-react` if it is no longer used elsewhere in that file
 
 ### Phase 3 — Fix the Post-Login Redirect
 
-- [ ] In `frontend/src/routes/index.tsx`, change the redirect target from `/demo/chart` to a suitable landing page (e.g. `/rag/documents` or `/chat`)
-- [ ] Verify unauthenticated users are still shown the landing/login page
+- [x] In `frontend/src/routes/index.tsx`, change the redirect target from `/demo/chart` to a suitable landing page — redirects to `/rag/documents`
+- [x] Verify unauthenticated users are still shown the landing/login page
 
 ### Phase 4 — Remove the PlotlyChart Component
 
-- [ ] Check whether `PlotlyChart` (`frontend/src/components/charts/PlotlyChart.tsx`) is used anywhere else in the codebase:
-  ```
-  grep -r "PlotlyChart" frontend/src --include="*.tsx" --include="*.ts"
-  ```
-- [ ] If not used elsewhere, delete `frontend/src/components/charts/PlotlyChart.tsx` and the `frontend/src/components/charts/` directory if it becomes empty
-- [ ] Remove the corresponding test file if one exists
+- [x] Check whether `PlotlyChart` (`frontend/src/components/charts/PlotlyChart.tsx`) is used anywhere else in the codebase
+- [x] Delete `frontend/src/components/charts/PlotlyChart.tsx` and the `frontend/src/components/charts/` directory
+- [x] Remove the corresponding test file if one existed
 
 ### Phase 5 — Remove the Plotly.js Dependency
 
-- [ ] Check `package.json` for Plotly-related packages (`plotly.js`, `plotly.js-dist-min`, `@types/plotly.js`, etc.):
-  ```
-  grep -i plotly frontend/package.json
-  ```
-- [ ] Uninstall any packages that are no longer needed:
-  ```
-  cd frontend && npm uninstall plotly.js-dist-min @types/plotly.js
-  ```
-- [ ] Confirm there are no remaining Plotly imports:
-  ```
-  grep -r "plotly" frontend/src --include="*.ts" --include="*.tsx"
-  ```
+- [x] Removed all Plotly-related packages from `package.json` (`plotly.js-dist-min`, `@types/plotly.js`)
+- [x] No remaining Plotly imports in `frontend/src`
+- [ ] **Remaining:** Delete orphaned type declaration `frontend/src/types/plotly-dist-min.d.ts`
 
 ### Phase 6 — Update / Remove Tests
 
-- [ ] In `frontend/src/components/layout/Sidebar.test.tsx`, remove or update any test cases that assert the Dashboard nav item is rendered
-- [ ] Run the full frontend test suite and confirm all tests pass:
-  ```
-  just fe-test
-  ```
+- [x] `frontend/src/components/layout/Sidebar.test.tsx` updated — asserts `expect(screen.queryByText("Dashboard")).not.toBeInTheDocument()`
+- [ ] Run the full frontend test suite and confirm all tests pass: `just fe-test`
 
 ### Phase 7 — Build Verification
 
 - [ ] Run `just fe-build` and confirm the build succeeds with no TypeScript errors
-- [ ] Spot-check the running app: log in and confirm the redirect goes to the new destination, and the sidebar no longer shows "Dashboard"
+- [ ] Spot-check the running app: log in and confirm the redirect goes to `/rag/documents`, and the sidebar no longer shows "Dashboard"
 
 ---
 
