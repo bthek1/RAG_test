@@ -55,7 +55,23 @@ Token endpoints: `POST /api/token/` and `POST /api/token/refresh/`.
 - Run worker locally: `just be-celery` | Docker: `just celery-up`
 - Beat scheduler: `just be-beat` | Flower dashboard: `just be-flower` (port 5555)
 
-**RAG pipeline (apps/embeddings):**
+**Chat app (`apps/chat/`):**
+
+- Local LLM chat via **Ollama** — requires a running Ollama server (not in Docker Compose)
+- HTTP client: `httpx` (not requests) — synchronous `OllamaClient` in `client.py`
+- Two endpoints: blocking `ChatView` (`POST /api/chat/`) and SSE streaming (`GET /api/chat/stream/`)
+- Configurable via env vars: `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_TIMEOUT`
+- Start Ollama separately before using chat features
+
+**Researcher app (`apps/researcher/`):**
+
+- Web search + full-page scraping pipeline
+- Search backend: `ddgs` package (DuckDuckGo) — supports text/news/video/image search types
+- Each search result is immediately scraped for full text via `scraper.py` (can be slow)
+- Single `SearchView` endpoint: `POST /api/researcher/search/`
+- No API key required for search
+
+**RAG pipeline (apps/embeddings):\*\***
 
 - Document ingestion: JSON text or multipart file upload (PDF, DOCX, PPTX, HTML, TXT, CSV, JSON, XLSX)
 - Chunking + embedding runs as a Celery background task (`embeddings.ingest_document`)
@@ -93,7 +109,7 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 - Format: `just be-fmt` (`ruff format`)
 - Type check: `uv run mypy .`
 
-**API docs:** `drf-spectacular` is installed. Schema at `/api/schema/`, Swagger UI at `/api/schema/swagger-ui/`.
+**API docs:** `drf-spectacular` is **not currently installed**. Add it if API schema generation is needed.
 
 ---
 
@@ -246,6 +262,9 @@ All common tasks are defined in the root `justfile`. Use `just --list` to see al
 Key commands:
 | Command | Description |
 |---|---|
+| `just dev` | Start backend (8004) + frontend (5174) + Celery concurrently (starts DB/Redis first) |
+| `just install` | Install all backend + frontend dependencies |
+| `just db-up` | Start only DB + Redis containers |
 | `just up` | Start all Docker services |
 | `just be-dev` | Run Django dev server locally (runs migrations first) |
 | `just be-test` | Run backend test suite |
@@ -282,7 +301,18 @@ Key commands:
 │   │   │   ├── views.py
 │   │   │   ├── urls.py
 │   │   │   └── migrations/
-│   │   ├── embeddings/        # RAG pipeline: Document ingestion, search, generation
+│   │   ├── chat/              # Ollama LLM chat: blocking + SSE streaming endpoints
+│   │   │   ├── client.py       # OllamaClient (httpx, synchronous)
+│   │   │   ├── services.py
+│   │   │   ├── views.py
+│   │   │   └── urls.py
+│   │   ├── researcher/        # Web search (ddgs/DuckDuckGo) + full-text scraping
+│   │   │   ├── search.py       # DDGClient wrapper
+│   │   │   ├── scraper.py
+│   │   │   ├── services.py
+│   │   │   ├── views.py
+│   │   │   └── urls.py
+│   │   └── embeddings/        # RAG pipeline: Document ingestion, search, generation
 │   │   │   ├── models.py       # Document (status FSM), Chunk (VectorField + HNSW)
 │   │   │   ├── serializers.py
 │   │   │   ├── services.py     # Chunking, embedding, cosine search, Claude RAG
@@ -290,7 +320,6 @@ Key commands:
 │   │   │   ├── views.py
 │   │   │   ├── urls.py
 │   │   │   └── migrations/
-│   │   └── pages/             # Health check and static page endpoints
 │   ├── conftest.py            # Root pytest fixtures
 │   ├── manage.py
 │   ├── pyproject.toml         # Dependencies (uv), pytest, ruff config

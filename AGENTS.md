@@ -5,7 +5,13 @@ This document guides agentic coding systems operating in this monorepo.
 ---
 
 ## Quick Commands
+### All-in-One
 
+| Command | Purpose |
+|---------|------|
+| `just dev` | Start backend (8004) + frontend (5174) + Celery concurrently (starts DB/Redis via Docker first) |
+| `just install` | Install all backend + frontend dependencies |
+| `just db-up` | Start only DB + Redis containers |
 ### Backend (Django + Python 3.13)
 
 | Command | Purpose |
@@ -220,7 +226,7 @@ See `.github/copilot-instructions.md` for:
 /
 ├── backend/              Django REST API (Python 3.13)
 │   ├── core/settings/    base.py, dev.py, prod.py, test.py
-│   ├── apps/             Domain applications (accounts, pages, etc.)
+│   ├── apps/             Domain applications (accounts, embeddings, chat, researcher)
 │   ├── conftest.py       Root pytest fixtures
 │   └── pyproject.toml    Dependencies, pytest & ruff config
 ├── frontend/             React SPA (TypeScript, Vite)
@@ -243,8 +249,10 @@ See `.github/copilot-instructions.md` for:
 
 ## See Also
 
-- `.github/copilot-instructions.md` — Full conventions and architecture
-- `.github/agents/backend.agent.md` — Detailed backend agent guide
-- `.github/agents/frontend.agent.md` — Detailed frontend agent guide
-- `docs/standards/api-contracts.md` — API endpoint specifications
-- `docs/guides/local-setup.md` — Development environment setup
+- [`.github/copilot-instructions.md`](.github/copilot-instructions.md) — Full conventions and architecture
+- [`.github/agents/backend.agent.md`](.github/agents/backend.agent.md) — Focused backend agent (Django, DRF, Celery, RAG)
+- [`.github/agents/frontend.agent.md`](.github/agents/frontend.agent.md) — Focused frontend agent (React, TanStack, Tailwind)
+- [`docs/standards/api-contracts.md`](docs/standards/api-contracts.md) — API endpoint specifications
+- [`docs/guides/local-setup.md`](docs/guides/local-setup.md) — Development environment setup
+- [`docs/explanations/architecture.md`](docs/explanations/architecture.md) — Architecture overview
+- [`docs/explanations/pgvector.md`](docs/explanations/pgvector.md) — pgvector / RAG pipeline details
