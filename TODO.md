@@ -11,3 +11,5 @@
 - [x] in the gpu 2.6GB is being used
 - [x] ollama access: django-drf-react-rag-ollama.md
  
+
+- [ ] swap the machine GPU and rag GPU
